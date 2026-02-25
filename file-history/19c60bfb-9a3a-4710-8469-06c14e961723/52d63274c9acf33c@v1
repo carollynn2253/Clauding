@@ -1,0 +1,360 @@
+package com.xuenn.bet188.revamp.viewmodel
+
+import android.app.Activity
+import android.content.Context
+import android.view.View
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.xuenn.bet188.R
+import com.xuenn.bet188.comm.network.ErrorCode
+import com.xuenn.bet188.comm.network.ErrorCode.Companion.valueOrGeneralError
+import com.xuenn.bet188.comm.network.SpiGetCountryPreference
+import com.xuenn.bet188.comm.network.SpiGetRegisterOptions
+import com.xuenn.bet188.comm.network.SpiLogin
+import com.xuenn.bet188.comm.network.SpiResponse
+import com.xuenn.bet188.comm.network.SpiSubmitRegistration
+import com.xuenn.bet188.revamp.callback.IBaseRegister
+import com.xuenn.bet188.revamp.callback.IGoogleOAuthGetListener
+import com.xuenn.bet188.revamp.model.data.Constants
+import com.xuenn.bet188.revamp.model.data.Constants.REGISTER_LEGAL_AGE_DEFAULT
+import com.xuenn.bet188.revamp.model.data.Constants.RegisterCodeType
+import com.xuenn.bet188.revamp.model.data.CurrencyObject
+import com.xuenn.bet188.revamp.model.data.EnterRegisterPlanData
+import com.xuenn.bet188.revamp.model.data.OAuthUserData
+import com.xuenn.bet188.revamp.model.data.RegisterRegionObject
+import com.xuenn.bet188.revamp.model.data.RegisterSuccessWebObject
+import com.xuenn.bet188.revamp.model.data.SimpleWebObject
+import com.xuenn.bet188.revamp.model.data.repo.RegisterRepository
+import com.xuenn.bet188.revamp.utils.RegionUtil
+import com.xuenn.bet188.revamp.utils.WebViewUtils.prepareUrlAndHeaders
+import com.xuenn.bet188.revamp.utils.hideKeyboard
+import com.xuenn.bet188.revamp.utils.oauth.GoogleOAuthHelper
+import com.xuenn.bet188.revamp.utils.oauth.GoogleOAuthUtil
+import com.xuenn.bet188.revamp.view.SimpleWebActivity
+import com.xuenn.bet188.revamp.view.login.LoginActivity
+import com.xuenn.bet188.revamp.view.register.OAuthRegisterActivity
+import com.xuenn.bet188.revamp.view.register.RegisterSuccessWebActivity
+import kotlinx.coroutines.launch
+import java.util.*
+
+
+class RegisterViewModel(private val repo: RegisterRepository) : BaseViewModel(), IGoogleOAuthGetListener {
+    private val TAG: String = this.javaClass.simpleName
+
+    private lateinit var context: Context
+
+    val selectedRegion = MutableLiveData<RegisterRegionObject>()
+    val selectedCurrency = MutableLiveData<CurrencyObject>()
+    val legalAge = MutableLiveData<Int>(REGISTER_LEGAL_AGE_DEFAULT)
+    val isEnableGoogleOAuth = MutableLiveData<Boolean>(false)
+    val isEnableFacebookOAuth = MutableLiveData<Boolean?>(null)
+    var affiliateData = EnterRegisterPlanData()
+    val registerResponseStatus = MutableLiveData<RegisterRepository.Companion.RegisterReturnStatus>()
+    val isRegisterLoginSuccess = MutableLiveData<Boolean>()
+    val enableReferAFriend = MutableLiveData<Boolean>()
+
+    var currencyList: MutableList<CurrencyObject> = ArrayList()
+
+    fun init(context: Context, isNeedGetRegisterOptions: Boolean = true) {
+        this.context = context
+
+        isEnableGoogleOAuth.value = RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowGoogleOAuth
+                && RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowGoogleOAuth
+
+
+        if (RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowFacebookOAuth == null ||
+            RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowFacebookOAuth == null
+        ) {
+            isEnableFacebookOAuth.value = null
+        } else {
+            isEnableFacebookOAuth.value = RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowFacebookOAuth!!
+                    && RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowFacebookOAuth!!
+        }
+
+        if (isNeedGetRegisterOptions) {
+            performGetAllRegistrationOptionAndDefault()
+        }
+    }
+
+    fun onRegionClick(view: View) {
+        context.hideKeyboard(view)
+
+        (context as IBaseRegister).openRegionSearch()
+    }
+
+    fun onCurrencyClick(view: View) {
+        context.hideKeyboard(view)
+
+        (context as IBaseRegister).openCurrencyChooser()
+    }
+
+    fun onAffClick(view: View) {
+        context.hideKeyboard(view)
+
+        (context as IBaseRegister).openEnterAffiliatePage()
+    }
+
+    fun onLoginClick(view: View) {
+        context.hideKeyboard(view)
+
+        LoginActivity.launchClearTop(context as Activity)
+    }
+
+    fun onTermClick(view: View) {
+        context.hideKeyboard(view)
+
+        (context as IBaseRegister).checkIsEnableRegisterBtn()
+    }
+
+    fun openSimpleWeb(view: View? = null, title: String, path: String) {
+        if (view != null)
+            context.hideKeyboard(view)
+
+        val (url, headers) = prepareUrlAndHeaders(context, path)
+        SimpleWebActivity.launch(context as Activity, SimpleWebObject(url, headers))
+    }
+
+    fun saveLockPattern(lockPattenKey: String = "") {
+        repo.setLockPatternEnable(context, true)
+        repo.setLockPattern(context, lockPattenKey)
+    }
+
+    fun openSuccessPage() {
+        val (url, headers) = prepareUrlAndHeaders(context, context.getString(R.string.urlSignUpSuccess))
+        RegisterSuccessWebActivity.launchClearTop(context as Activity, RegisterSuccessWebObject(url, headers))
+    }
+
+    fun clearCache() {
+        repo.clearRegistrationCache(context)
+    }
+
+    fun performGoogleSignIn(activity: Activity) {
+        viewModelScope.launch {
+            GoogleOAuthHelper.launchSignIn(activity, Calendar.getInstance().timeInMillis, this@RegisterViewModel)
+        }
+    }
+
+    override fun googleIdTokenCredentialResponse(tokenCredential: GoogleIdTokenCredential) {
+        OAuthRegisterActivity.launch(
+            context as Activity, OAuthUserData(
+                oAuthType = Constants.OAuthType.Google,
+                oAuthEmail = tokenCredential.id,
+                oAuthId = GoogleOAuthUtil.getOAuthIdForSPI(tokenCredential.idToken),
+                isOAuthEmailVerified = GoogleOAuthUtil.isEmailVerified(tokenCredential.idToken),
+            )
+        )
+    }
+
+    private fun performGetAllRegistrationOptionAndDefault() {
+        progressDialogObservable.value = true
+        return repo.getRegistrationOption(context, object : SpiResponse<SpiGetRegisterOptions.Response>() {
+            override fun onResponse(
+                resp: SpiGetRegisterOptions.Response?, status: Status, failCode: FailCode
+            ): Boolean {
+                progressDialogObservable.value = false
+                if (status === Status.SUCCESS) {
+                    return when (ErrorCode.valueOrGeneralError(resp!!.code)) {
+                        ErrorCode.COMM0000 -> {
+                            repo.saveRegionList(context, resp.body.options!!.countries)
+                            repo.saveCurrencyList(context, resp.body.options!!.currencies)
+                            repo.setEnableReferAFriend(context, resp.body.enableReferAFriend)
+                            enableReferAFriend.value = resp.body.enableReferAFriend
+
+                            val isoCodeRegion = repo.getIsoRegion(context)
+                            val countryNameRegion = repo.getDefaultRegion(context, resp.body.preference!!.countryName)
+                            when {
+                                isoCodeRegion != null -> {
+                                    selectedRegion.value = isoCodeRegion!!
+                                    performGetAgeCurrencyListOfRegion()
+                                }
+
+                                countryNameRegion != null -> {
+                                    selectedRegion.value = countryNameRegion!!
+                                    selectedCurrency.value = repo.getDefaultCurrency(context, resp.body.preference!!.defcurrency)
+                                    currencyList = repo.getCurrencyListOfRegion(context, resp.body.preference!!.currencies)
+                                    legalAge.value = resp.body.preference!!.getLegalAge()
+                                    isEnableGoogleOAuth.value = RegionUtil.getRegion(context, resp.body.preference!!.region, null).isAllowGoogleOAuth
+                                    if (isEnableFacebookOAuth.value != null) isEnableFacebookOAuth.value = RegionUtil.getRegion(context, resp.body.preference!!.region, null).isAllowFacebookOAuth
+                                }
+
+                                else -> {
+                                    val regionList = repo.getRegionList(context)
+                                    if (regionList.isNotEmpty()) {
+                                        selectedRegion.value = regionList[0]
+                                        performGetAgeCurrencyListOfRegion()
+                                    }
+                                }
+                            }
+                            true
+                        }
+
+                        else -> false
+                    }
+                } else {
+                    return false
+                }
+            }
+        })
+    }
+
+    fun performGetAgeCurrencyListOfRegion() {
+        progressDialogObservable.value = true
+        return repo.getCurrencyCodeListOfRegion(context, selectedRegion.value!!.code, object : SpiResponse<SpiGetCountryPreference.Response>() {
+            override fun onResponse(
+                resp: SpiGetCountryPreference.Response?, status: Status, failCode: FailCode
+            ): Boolean {
+                progressDialogObservable.value = false
+                return if (status === Status.SUCCESS) {
+                    when (ErrorCode.valueOrGeneralError(resp!!.code)) {
+                        ErrorCode.COMM0000 -> {
+                            legalAge.value = resp.body.getLegalAge()
+
+                            selectedCurrency.value = repo.getDefaultCurrency(context, resp.body.defcurrency)
+                            currencyList = repo.getCurrencyListOfRegion(context, resp.body.currencies)
+                            isEnableGoogleOAuth.value = RegionUtil.getRegion(context, resp.body.region, null).isAllowGoogleOAuth
+                            if (isEnableFacebookOAuth.value != null) isEnableFacebookOAuth.value = RegionUtil.getRegion(context, resp.body.region, null).isAllowFacebookOAuth
+                            true
+                        }
+
+                        else -> false
+                    }
+                } else {
+                    false
+                }
+            }
+        })
+    }
+
+    fun performOAuthRegister(
+        oAuthUserData: OAuthUserData,
+        email: String, userName: String, pwd: String, planData: EnterRegisterPlanData, isSendPromotionChecked: Boolean,
+    ) {
+        performRegister(
+            email = email,
+            userName = userName,
+            pwd = pwd,
+            planData = planData,
+            isSendPromotionChecked = isSendPromotionChecked,
+            oAuthUserData = oAuthUserData
+        )
+    }
+
+    fun performRegister(
+        email: String, userName: String, pwd: String, planData: EnterRegisterPlanData, isSendPromotionChecked: Boolean,
+        oAuthUserData: OAuthUserData = OAuthUserData()
+    ) {
+        progressDialogObservable.value = true
+        var affiliateId: Int? = null
+        var referralCode: String? = null
+        when (planData.codeType) {
+            RegisterCodeType.AffiliateId -> affiliateId = planData.inputCode.toInt()
+            RegisterCodeType.ReferralCode -> referralCode = planData.inputCode
+            RegisterCodeType.None -> {}
+        }
+        return repo.submitRegistration(
+            context,
+            email = email,
+            userName = userName,
+            pwd = pwd,
+            region = selectedRegion.value!!,
+            currency = selectedCurrency.value!!,
+            affiliateId = affiliateId,
+            referralCode = referralCode,
+            isSendPromotionChecked = isSendPromotionChecked,
+            oAuthUserData = oAuthUserData,
+            callback = object : SpiResponse<SpiSubmitRegistration.Response>() {
+                override fun onResponse(
+                    resp: SpiSubmitRegistration.Response?, status: Status, failCode: FailCode
+                ): Boolean {
+                    progressDialogObservable.value = false
+                    return if (status === Status.SUCCESS) {
+                        when (valueOrGeneralError(resp!!.code)) {
+                            ErrorCode.COMM0000 -> {
+                                registerResponseStatus.value = RegisterRepository.Companion.RegisterReturnStatus.fromCode(resp!!.body.returnCode)
+                                if (registerResponseStatus.value == RegisterRepository.Companion.RegisterReturnStatus.SUBMIT_SUCCESS) {
+                                    if (oAuthUserData.oAuthType == Constants.OAuthType.Unknown) {
+                                        performLogin(userName, pwd)
+                                    } else {
+                                        performOAuthLoginAfterRegister(oAuthUserData)
+                                    }
+                                    true
+                                } else
+                                    false
+                            }
+
+                            else -> {
+                                false
+                            }
+                        }
+                    } else {
+                        false
+                    }
+                }
+            })
+    }
+
+    fun performLogin(userName: String, pwd: String) {
+        progressDialogObservable.value = true
+        return repo.login(context, userName, pwd, object : SpiResponse<SpiLogin.Response>() {
+            override fun onResponse(
+                resp: SpiLogin.Response?, status: Status, failCode: FailCode
+            ): Boolean {
+                progressDialogObservable.value = false
+                if (status === Status.SUCCESS) {
+                    return when (ErrorCode.valueOrGeneralError(resp!!.code)) {
+                        ErrorCode.COMM0000 -> {
+                            repo.saveLoginSuccessInfo(context, resp.body)
+                            isRegisterLoginSuccess.value = true
+
+                            // Fetch the general setting by region
+                            repo.getGeneralSettings(context, Constants.UpdateDeviceInfoEntry.REGISTER)
+                            true
+                        }
+
+                        else -> {
+                            isRegisterLoginSuccess.value = false
+                            true
+                        }
+                    }
+                } else {
+                    return false
+                }
+            }
+        })
+    }
+
+    private fun performOAuthLoginAfterRegister(
+        oAuthUserData: OAuthUserData
+    ) {
+        progressDialogObservable.value = true
+        return repo.oAuthLogin(
+            context, oAuthUserData = oAuthUserData,
+            callback = object : SpiResponse<SpiLogin.Response>() {
+                override fun onResponse(
+                    resp: SpiLogin.Response?, status: Status, failCode: FailCode
+                ): Boolean {
+                    progressDialogObservable.value = false
+                    if (status === Status.SUCCESS) {
+                        return when (ErrorCode.valueOrGeneralError(resp!!.code)) {
+                            ErrorCode.COMM0000 -> {
+                                repo.saveLoginSuccessInfo(context, resp.body)
+                                isRegisterLoginSuccess.value = true
+
+                                // Fetch the general setting by region
+                                repo.getGeneralSettings(context, Constants.UpdateDeviceInfoEntry.REGISTER)
+                                true
+                            }
+
+                            else -> {
+                                isRegisterLoginSuccess.value = false
+                                true
+                            }
+                        }
+                    } else {
+                        return false
+                    }
+                }
+            })
+    }
+}

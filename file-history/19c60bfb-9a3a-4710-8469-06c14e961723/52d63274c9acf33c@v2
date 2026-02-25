@@ -1,0 +1,372 @@
+package com.xuenn.bet188.revamp.viewmodel
+
+import android.app.Activity
+import android.content.Context
+import android.view.View
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.xuenn.bet188.R
+import com.xuenn.bet188.comm.network.ErrorCode
+import com.xuenn.bet188.comm.network.ErrorCode.Companion.valueOrGeneralError
+import com.xuenn.bet188.comm.network.SpiGetCountryPreference
+import com.xuenn.bet188.comm.network.SpiGetRegisterOptions
+import com.xuenn.bet188.comm.network.SpiLogin
+import com.xuenn.bet188.comm.network.SpiResponse
+import com.xuenn.bet188.comm.network.SpiSubmitRegistration
+import com.xuenn.bet188.revamp.callback.IGoogleOAuthGetListener
+import com.xuenn.bet188.revamp.model.data.Constants
+import com.xuenn.bet188.revamp.model.data.Constants.REGISTER_LEGAL_AGE_DEFAULT
+import com.xuenn.bet188.revamp.model.data.Constants.RegisterCodeType
+import com.xuenn.bet188.revamp.model.data.CurrencyObject
+import com.xuenn.bet188.revamp.model.data.EnterRegisterPlanData
+import com.xuenn.bet188.revamp.model.data.OAuthUserData
+import com.xuenn.bet188.revamp.model.data.RegisterEffect
+import com.xuenn.bet188.revamp.model.data.RegisterRegionObject
+import com.xuenn.bet188.revamp.model.data.RegisterSuccessWebObject
+import com.xuenn.bet188.revamp.model.data.RegisterUiState
+import com.xuenn.bet188.revamp.model.data.SimpleWebObject
+import com.xuenn.bet188.revamp.model.data.repo.RegisterRepository
+import com.xuenn.bet188.revamp.utils.RegionUtil
+import com.xuenn.bet188.revamp.utils.WebViewUtils.prepareUrlAndHeaders
+import com.xuenn.bet188.revamp.utils.hideKeyboard
+import com.xuenn.bet188.revamp.utils.oauth.GoogleOAuthHelper
+import com.xuenn.bet188.revamp.utils.oauth.GoogleOAuthUtil
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.util.ArrayList
+import java.util.Calendar
+
+
+class RegisterViewModel(private val repo: RegisterRepository) : BaseViewModel(), IGoogleOAuthGetListener {
+    private val TAG: String = this.javaClass.simpleName
+
+    private lateinit var appContext: Context
+
+    private val _state = MutableStateFlow(RegisterUiState())
+    val state: StateFlow<RegisterUiState> = _state.asStateFlow()
+
+    private val _effects = MutableSharedFlow<RegisterEffect>(extraBufferCapacity = 1)
+    val effects: SharedFlow<RegisterEffect> = _effects.asSharedFlow()
+
+    // Kept as MutableLiveData for DataBinding + ListPopupWindow compatibility
+    val selectedRegion = MutableLiveData<RegisterRegionObject>()
+    val selectedCurrency = MutableLiveData<CurrencyObject>()
+    val legalAge = MutableLiveData<Int>(REGISTER_LEGAL_AGE_DEFAULT)
+    val isEnableGoogleOAuth = MutableLiveData<Boolean>(false)
+    val isEnableFacebookOAuth = MutableLiveData<Boolean?>(null)
+    val enableReferAFriend = MutableLiveData<Boolean>()
+
+    var affiliateData = EnterRegisterPlanData()
+    var currencyList: MutableList<CurrencyObject> = ArrayList()
+
+    fun init(context: Context, isNeedGetRegisterOptions: Boolean = true) {
+        appContext = context.applicationContext
+
+        isEnableGoogleOAuth.value =
+            RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowGoogleOAuth
+                    && RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowGoogleOAuth
+
+        if (RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowFacebookOAuth == null ||
+            RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowFacebookOAuth == null
+        ) {
+            isEnableFacebookOAuth.value = null
+        } else {
+            isEnableFacebookOAuth.value =
+                RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowFacebookOAuth!!
+                        && RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowFacebookOAuth!!
+        }
+
+        if (isNeedGetRegisterOptions) {
+            performGetAllRegistrationOptionAndDefault()
+        }
+    }
+
+    fun onRegionClick(view: View) {
+        appContext.hideKeyboard(view)
+        viewModelScope.launch { _effects.emit(RegisterEffect.OpenRegionSearch) }
+    }
+
+    fun onCurrencyClick(view: View) {
+        appContext.hideKeyboard(view)
+        viewModelScope.launch { _effects.emit(RegisterEffect.OpenCurrencyChooser) }
+    }
+
+    fun onAffClick(view: View) {
+        appContext.hideKeyboard(view)
+        viewModelScope.launch { _effects.emit(RegisterEffect.OpenEnterAffiliatePage) }
+    }
+
+    fun onLoginClick(view: View) {
+        appContext.hideKeyboard(view)
+        viewModelScope.launch { _effects.emit(RegisterEffect.NavigateToLogin) }
+    }
+
+    fun onTermClick(view: View) {
+        appContext.hideKeyboard(view)
+        viewModelScope.launch { _effects.emit(RegisterEffect.RefreshButtonState) }
+    }
+
+    fun openSimpleWeb(view: View? = null, title: String, path: String) {
+        if (view != null) appContext.hideKeyboard(view)
+        val (url, headers) = prepareUrlAndHeaders(appContext, path)
+        viewModelScope.launch { _effects.emit(RegisterEffect.OpenSimpleWeb(SimpleWebObject(url, headers))) }
+    }
+
+    fun saveLockPattern(lockPattenKey: String = "") {
+        repo.setLockPatternEnable(appContext, true)
+        repo.setLockPattern(appContext, lockPattenKey)
+    }
+
+    fun openSuccessPage() {
+        val (url, headers) = prepareUrlAndHeaders(appContext, appContext.getString(R.string.urlSignUpSuccess))
+        viewModelScope.launch { _effects.emit(RegisterEffect.OpenSuccessPage(RegisterSuccessWebObject(url, headers))) }
+    }
+
+    fun clearCache() {
+        repo.clearRegistrationCache(appContext)
+    }
+
+    fun performGoogleSignIn(activity: Activity) {
+        viewModelScope.launch {
+            GoogleOAuthHelper.launchSignIn(activity, Calendar.getInstance().timeInMillis, this@RegisterViewModel)
+        }
+    }
+
+    override fun googleIdTokenCredentialResponse(tokenCredential: GoogleIdTokenCredential) {
+        val oAuthUserData = OAuthUserData(
+            oAuthType = Constants.OAuthType.Google,
+            oAuthEmail = tokenCredential.id,
+            oAuthId = GoogleOAuthUtil.getOAuthIdForSPI(tokenCredential.idToken),
+            isOAuthEmailVerified = GoogleOAuthUtil.isEmailVerified(tokenCredential.idToken),
+        )
+        viewModelScope.launch { _effects.emit(RegisterEffect.LaunchOAuthRegister(oAuthUserData)) }
+    }
+
+    private fun performGetAllRegistrationOptionAndDefault() {
+        _state.update { it.copy(isLoading = true) }
+        repo.getRegistrationOption(appContext, object : SpiResponse<SpiGetRegisterOptions.Response>() {
+            override fun onResponse(
+                resp: SpiGetRegisterOptions.Response?, status: Status, failCode: FailCode
+            ): Boolean {
+                _state.update { it.copy(isLoading = false) }
+                if (status === Status.SUCCESS) {
+                    return when (ErrorCode.valueOrGeneralError(resp!!.code)) {
+                        ErrorCode.COMM0000 -> {
+                            repo.saveRegionList(appContext, resp.body.options!!.countries)
+                            repo.saveCurrencyList(appContext, resp.body.options!!.currencies)
+                            repo.setEnableReferAFriend(appContext, resp.body.enableReferAFriend)
+                            enableReferAFriend.value = resp.body.enableReferAFriend
+
+                            val isoCodeRegion = repo.getIsoRegion(appContext)
+                            val countryNameRegion = repo.getDefaultRegion(appContext, resp.body.preference!!.countryName)
+                            when {
+                                isoCodeRegion != null -> {
+                                    selectedRegion.value = isoCodeRegion
+                                    performGetAgeCurrencyListOfRegion()
+                                }
+
+                                countryNameRegion != null -> {
+                                    selectedRegion.value = countryNameRegion
+                                    selectedCurrency.value = repo.getDefaultCurrency(appContext, resp.body.preference!!.defcurrency)
+                                    currencyList = repo.getCurrencyListOfRegion(appContext, resp.body.preference!!.currencies)
+                                    legalAge.value = resp.body.preference!!.getLegalAge()
+                                    isEnableGoogleOAuth.value = RegionUtil.getRegion(appContext, resp.body.preference!!.region, null).isAllowGoogleOAuth
+                                    if (isEnableFacebookOAuth.value != null) isEnableFacebookOAuth.value = RegionUtil.getRegion(appContext, resp.body.preference!!.region, null).isAllowFacebookOAuth
+                                }
+
+                                else -> {
+                                    val regionList = repo.getRegionList(appContext)
+                                    if (regionList.isNotEmpty()) {
+                                        selectedRegion.value = regionList[0]
+                                        performGetAgeCurrencyListOfRegion()
+                                    }
+                                }
+                            }
+                            true
+                        }
+
+                        else -> false
+                    }
+                } else {
+                    return false
+                }
+            }
+        })
+    }
+
+    fun performGetAgeCurrencyListOfRegion() {
+        _state.update { it.copy(isLoading = true) }
+        repo.getCurrencyCodeListOfRegion(appContext, selectedRegion.value!!.code, object : SpiResponse<SpiGetCountryPreference.Response>() {
+            override fun onResponse(
+                resp: SpiGetCountryPreference.Response?, status: Status, failCode: FailCode
+            ): Boolean {
+                _state.update { it.copy(isLoading = false) }
+                return if (status === Status.SUCCESS) {
+                    when (ErrorCode.valueOrGeneralError(resp!!.code)) {
+                        ErrorCode.COMM0000 -> {
+                            legalAge.value = resp.body.getLegalAge()
+                            selectedCurrency.value = repo.getDefaultCurrency(appContext, resp.body.defcurrency)
+                            currencyList = repo.getCurrencyListOfRegion(appContext, resp.body.currencies)
+                            isEnableGoogleOAuth.value = RegionUtil.getRegion(appContext, resp.body.region, null).isAllowGoogleOAuth
+                            if (isEnableFacebookOAuth.value != null) isEnableFacebookOAuth.value = RegionUtil.getRegion(appContext, resp.body.region, null).isAllowFacebookOAuth
+                            true
+                        }
+
+                        else -> false
+                    }
+                } else {
+                    false
+                }
+            }
+        })
+    }
+
+    fun performOAuthRegister(
+        oAuthUserData: OAuthUserData,
+        email: String, userName: String, pwd: String, planData: EnterRegisterPlanData, isSendPromotionChecked: Boolean,
+    ) {
+        performRegister(
+            email = email,
+            userName = userName,
+            pwd = pwd,
+            planData = planData,
+            isSendPromotionChecked = isSendPromotionChecked,
+            oAuthUserData = oAuthUserData
+        )
+    }
+
+    fun performRegister(
+        email: String, userName: String, pwd: String, planData: EnterRegisterPlanData, isSendPromotionChecked: Boolean,
+        oAuthUserData: OAuthUserData = OAuthUserData()
+    ) {
+        _state.update { it.copy(isLoading = true) }
+        var affiliateId: Int? = null
+        var referralCode: String? = null
+        when (planData.codeType) {
+            RegisterCodeType.AffiliateId -> affiliateId = planData.inputCode.toInt()
+            RegisterCodeType.ReferralCode -> referralCode = planData.inputCode
+            RegisterCodeType.None -> {}
+        }
+        repo.submitRegistration(
+            appContext,
+            email = email,
+            userName = userName,
+            pwd = pwd,
+            region = selectedRegion.value!!,
+            currency = selectedCurrency.value!!,
+            affiliateId = affiliateId,
+            referralCode = referralCode,
+            isSendPromotionChecked = isSendPromotionChecked,
+            oAuthUserData = oAuthUserData,
+            callback = object : SpiResponse<SpiSubmitRegistration.Response>() {
+                override fun onResponse(
+                    resp: SpiSubmitRegistration.Response?, status: Status, failCode: FailCode
+                ): Boolean {
+                    _state.update { it.copy(isLoading = false) }
+                    return if (status === Status.SUCCESS) {
+                        when (valueOrGeneralError(resp!!.code)) {
+                            ErrorCode.COMM0000 -> {
+                                val returnStatus = RegisterRepository.Companion.RegisterReturnStatus.fromCode(resp.body.returnCode)
+                                viewModelScope.launch {
+                                    when (returnStatus) {
+                                        RegisterRepository.Companion.RegisterReturnStatus.SUBMIT_SUCCESS -> {
+                                            if (oAuthUserData.oAuthType == Constants.OAuthType.Unknown) {
+                                                performLogin(userName, pwd)
+                                            } else {
+                                                performOAuthLoginAfterRegister(oAuthUserData)
+                                            }
+                                        }
+                                        RegisterRepository.Companion.RegisterReturnStatus.USERNAME_EXIST ->
+                                            _effects.emit(RegisterEffect.ShowUsernameExistsError)
+                                        RegisterRepository.Companion.RegisterReturnStatus.EMAIL_EXIST ->
+                                            _effects.emit(RegisterEffect.ShowEmailExistsError)
+                                        RegisterRepository.Companion.RegisterReturnStatus.EMAIL_USERNAME_EXIST ->
+                                            _effects.emit(RegisterEffect.ShowEmailAndUsernameExistError)
+                                        RegisterRepository.Companion.RegisterReturnStatus.FAIL ->
+                                            _effects.emit(RegisterEffect.ShowRegisterFail)
+                                        RegisterRepository.Companion.RegisterReturnStatus.USERNAME_SAME_AS_PASSWORD ->
+                                            _effects.emit(RegisterEffect.ShowUsernamePasswordSameError)
+                                        RegisterRepository.Companion.RegisterReturnStatus.OAUTH_FAIL ->
+                                            _effects.emit(RegisterEffect.ShowOAuthFail)
+                                        RegisterRepository.Companion.RegisterReturnStatus.OAUTH_ID_EXIST ->
+                                            _effects.emit(RegisterEffect.ShowOAuthIdExists)
+                                        else -> {}
+                                    }
+                                }
+                                returnStatus == RegisterRepository.Companion.RegisterReturnStatus.SUBMIT_SUCCESS
+                            }
+
+                            else -> false
+                        }
+                    } else {
+                        false
+                    }
+                }
+            })
+    }
+
+    fun performLogin(userName: String, pwd: String) {
+        _state.update { it.copy(isLoading = true) }
+        repo.login(appContext, userName, pwd, object : SpiResponse<SpiLogin.Response>() {
+            override fun onResponse(
+                resp: SpiLogin.Response?, status: Status, failCode: FailCode
+            ): Boolean {
+                _state.update { it.copy(isLoading = false) }
+                if (status === Status.SUCCESS) {
+                    return when (ErrorCode.valueOrGeneralError(resp!!.code)) {
+                        ErrorCode.COMM0000 -> {
+                            repo.saveLoginSuccessInfo(appContext, resp.body)
+                            viewModelScope.launch { _effects.emit(RegisterEffect.OpenLockPatternSetting) }
+                            repo.getGeneralSettings(appContext, Constants.UpdateDeviceInfoEntry.REGISTER)
+                            true
+                        }
+
+                        else -> {
+                            viewModelScope.launch { _effects.emit(RegisterEffect.ShowLoginFailed) }
+                            true
+                        }
+                    }
+                } else {
+                    return false
+                }
+            }
+        })
+    }
+
+    private fun performOAuthLoginAfterRegister(oAuthUserData: OAuthUserData) {
+        _state.update { it.copy(isLoading = true) }
+        repo.oAuthLogin(
+            appContext, oAuthUserData = oAuthUserData,
+            callback = object : SpiResponse<SpiLogin.Response>() {
+                override fun onResponse(
+                    resp: SpiLogin.Response?, status: Status, failCode: FailCode
+                ): Boolean {
+                    _state.update { it.copy(isLoading = false) }
+                    if (status === Status.SUCCESS) {
+                        return when (ErrorCode.valueOrGeneralError(resp!!.code)) {
+                            ErrorCode.COMM0000 -> {
+                                repo.saveLoginSuccessInfo(appContext, resp.body)
+                                viewModelScope.launch { _effects.emit(RegisterEffect.OpenLockPatternSetting) }
+                                repo.getGeneralSettings(appContext, Constants.UpdateDeviceInfoEntry.REGISTER)
+                                true
+                            }
+
+                            else -> {
+                                viewModelScope.launch { _effects.emit(RegisterEffect.ShowLoginFailed) }
+                                true
+                            }
+                        }
+                    } else {
+                        return false
+                    }
+                }
+            })
+    }
+}

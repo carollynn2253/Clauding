@@ -1,0 +1,32 @@
+package com.xuenn.bet188.revamp.model.data
+
+import com.xuenn.bet188.revamp.model.data.Constants.REGISTER_LEGAL_AGE_DEFAULT
+
+data class RegisterUiState(
+    val isLoading: Boolean = false
+)
+
+sealed interface RegisterEffect {
+    // Triggered by ViewModel click handlers (replace IBaseRegister callbacks)
+    data object OpenRegionSearch : RegisterEffect
+    data object OpenCurrencyChooser : RegisterEffect
+    data object OpenEnterAffiliatePage : RegisterEffect
+    data object NavigateToLogin : RegisterEffect
+    data class OpenSimpleWeb(val obj: SimpleWebObject) : RegisterEffect
+    data class LaunchOAuthRegister(val oAuthUserData: OAuthUserData) : RegisterEffect
+    data object RefreshButtonState : RegisterEffect
+
+    // Register API response errors (replace registerResponseStatus LiveData)
+    data object ShowUsernameExistsError : RegisterEffect
+    data object ShowEmailExistsError : RegisterEffect
+    data object ShowEmailAndUsernameExistError : RegisterEffect
+    data object ShowRegisterFail : RegisterEffect
+    data object ShowUsernamePasswordSameError : RegisterEffect
+    data object ShowOAuthFail : RegisterEffect
+    data object ShowOAuthIdExists : RegisterEffect
+
+    // Post-registration flow (replace isRegisterLoginSuccess LiveData)
+    data object OpenLockPatternSetting : RegisterEffect
+    data object ShowLoginFailed : RegisterEffect
+    data class OpenSuccessPage(val obj: RegisterSuccessWebObject) : RegisterEffect
+}

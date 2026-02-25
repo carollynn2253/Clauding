@@ -1,0 +1,148 @@
+2026-02-24T09:00:09.916Z [DEBUG] MDM settings load completed in 24ms
+2026-02-24T09:00:10.076Z [DEBUG] [init] configureGlobalMTLS starting
+2026-02-24T09:00:10.076Z [DEBUG] [init] configureGlobalMTLS complete
+2026-02-24T09:00:10.076Z [DEBUG] [init] configureGlobalAgents starting
+2026-02-24T09:00:10.077Z [DEBUG] [init] configureGlobalAgents complete
+2026-02-24T09:00:10.094Z [DEBUG] [STARTUP] Loading MCP configs...
+2026-02-24T09:00:10.097Z [DEBUG] [ToolSearch:optimistic] mode=tst-auto, ENABLE_TOOL_SEARCH=undefined, result=true
+2026-02-24T09:00:10.098Z [DEBUG] [STARTUP] Running setup()...
+2026-02-24T09:00:10.106Z [DEBUG] Loading skills from: managed=/Library/Application Support/ClaudeCode/.claude/skills, user=/Users/07404.chingting.chiu/.claude/skills, project=[]
+2026-02-24T09:00:10.107Z [ERROR] Error: Error: ENOENT: no such file or directory, open '/Library/Application Support/ClaudeCode/managed-settings.json'
+    at openSync (unknown)
+    at readSync (/$bunfs/root/claude:12:1441)
+    at O6 (/$bunfs/root/claude:6412:113)
+    at I_ (/$bunfs/root/claude:6414:226)
+    at Gu0 (/$bunfs/root/claude:6398:5806)
+    at tI$ (/$bunfs/root/claude:6398:5579)
+    at <anonymous> (/$bunfs/root/claude:6398:4272)
+    at async rI$ (/$bunfs/root/claude:6398:4654)
+    at async <anonymous> (/$bunfs/root/claude:11966:400)
+    at processTicksAndRejections (native:7:39)
+2026-02-24T09:00:10.107Z [DEBUG] Error log sink initialized
+2026-02-24T09:00:10.129Z [DEBUG] [STARTUP] setup() completed in 31ms
+2026-02-24T09:00:10.129Z [DEBUG] [STARTUP] Loading commands and agents...
+2026-02-24T09:00:10.134Z [DEBUG] [Claude in Chrome] Found chrome profiles: Profile 1, Default, Profile 4
+2026-02-24T09:00:10.134Z [DEBUG] Found 0 plugins (0 enabled, 0 disabled)
+2026-02-24T09:00:10.134Z [DEBUG] getPluginSkills: Processing 0 enabled plugins
+2026-02-24T09:00:10.134Z [DEBUG] Total plugin skills loaded: 0
+2026-02-24T09:00:10.134Z [DEBUG] Total plugin commands loaded: 0
+2026-02-24T09:00:10.134Z [DEBUG] Registered 0 hooks from 0 plugins
+2026-02-24T09:00:10.137Z [DEBUG] Loaded 0 unique skills (0 unconditional, 0 conditional, managed: 0, user: 0, project: 0, additional: 0, legacy commands: 0)
+2026-02-24T09:00:10.137Z [DEBUG] getSkills returning: 0 skill dir commands, 0 plugin skills, 3 bundled skills
+2026-02-24T09:00:10.139Z [DEBUG] Total plugin agents loaded: 0
+2026-02-24T09:00:10.146Z [DEBUG] Writing to temp file: /Users/07404.chingting.chiu/.claude.json.tmp.96606.1771923610146
+2026-02-24T09:00:10.146Z [DEBUG] Preserving file permissions: 100600
+2026-02-24T09:00:10.147Z [DEBUG] Temp file written successfully, size: 460 bytes
+2026-02-24T09:00:10.147Z [DEBUG] Applied original permissions to temp file
+2026-02-24T09:00:10.147Z [DEBUG] Renaming /Users/07404.chingting.chiu/.claude.json.tmp.96606.1771923610146 to /Users/07404.chingting.chiu/.claude.json
+2026-02-24T09:00:10.148Z [DEBUG] File /Users/07404.chingting.chiu/.claude.json written atomically
+2026-02-24T09:00:10.149Z [DEBUG] [STARTUP] Commands and agents loaded in 20ms
+2026-02-24T09:00:10.168Z [DEBUG] [STARTUP] Running showSetupScreens()...
+2026-02-24T09:00:10.591Z [DEBUG] [keybindings] KeybindingSetup initialized with 103 bindings, 0 warnings
+2026-02-24T09:00:10.616Z [DEBUG] [keybindings] Skipping file watcher - user customization disabled
+2026-02-24T09:00:10.654Z [DEBUG] Git remote URL: ssh://git@gitlab.ict888.net:8022/188/NativeApp/android-188asia2.git
+2026-02-24T09:00:10.654Z [DEBUG] Parsed repository: null from URL: ssh://git@gitlab.ict888.net:8022/188/NativeApp/android-188asia2.git
+2026-02-24T09:00:10.655Z [DEBUG] Acquired mtime-based lock on running version: /Users/07404.chingting.chiu/.local/share/claude/versions/2.1.52
+2026-02-24T09:00:10.658Z [DEBUG] [Claude in Chrome] Extension not found in any browser
+2026-02-24T09:00:10.679Z [DEBUG] Writing to temp file: /Users/07404.chingting.chiu/.claude.json.tmp.96606.1771923610679
+2026-02-24T09:00:10.679Z [DEBUG] Preserving file permissions: 100600
+2026-02-24T09:00:10.680Z [DEBUG] Temp file written successfully, size: 460 bytes
+2026-02-24T09:00:10.681Z [DEBUG] Applied original permissions to temp file
+2026-02-24T09:00:10.681Z [DEBUG] Renaming /Users/07404.chingting.chiu/.claude.json.tmp.96606.1771923610679 to /Users/07404.chingting.chiu/.claude.json
+2026-02-24T09:00:10.682Z [DEBUG] File /Users/07404.chingting.chiu/.claude.json written atomically
+2026-02-24T09:00:11.312Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:11.395Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:23.387Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:23.388Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:24.165Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:24.165Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:24.540Z [DEBUG] High write ratio: blit=0, write=2169 (100.0% writes), screen=36x233
+2026-02-24T09:00:24.540Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:25.399Z [DEBUG] High write ratio: blit=0, write=2169 (100.0% writes), screen=36x233
+2026-02-24T09:00:25.399Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:26.111Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:26.111Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:27.105Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:27.105Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:27.939Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:27.939Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:28.486Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:28.486Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:29.389Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:29.389Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:29.856Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:29.856Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:30.378Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:30.378Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:31.425Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:31.425Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:33.099Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:33.099Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:33.665Z [DEBUG] High write ratio: blit=0, write=2169 (100.0% writes), screen=36x233
+2026-02-24T09:00:33.665Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:36.554Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:36.554Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:36.944Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:36.944Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:37.954Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:37.954Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:38.372Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:38.372Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:41.064Z [DEBUG] High write ratio: blit=0, write=2171 (100.0% writes), screen=36x233
+2026-02-24T09:00:41.064Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:41.468Z [DEBUG] High write ratio: blit=0, write=2181 (100.0% writes), screen=36x233
+2026-02-24T09:00:41.468Z [DEBUG] Full reset (scrollback changes): scrollbackRows=12, firstChangeY=0
+  prev: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+  next: "Welcome to Claude Code v2.1.52                                                                                                                                                                                                           "
+2026-02-24T09:00:43.372Z [DEBUG] Writing to temp file: /Users/07404.chingting.chiu/.claude.json.tmp.96606.1771923643372
+2026-02-24T09:00:43.373Z [DEBUG] Preserving file permissions: 100600
+2026-02-24T09:00:43.374Z [DEBUG] Temp file written successfully, size: 490 bytes
+2026-02-24T09:00:43.374Z [DEBUG] Applied original permissions to temp file
+2026-02-24T09:00:43.374Z [DEBUG] Renaming /Users/07404.chingting.chiu/.claude.json.tmp.96606.1771923643372 to /Users/07404.chingting.chiu/.claude.json
+2026-02-24T09:00:43.375Z [DEBUG] File /Users/07404.chingting.chiu/.claude.json written atomically
+2026-02-24T09:00:43.388Z [DEBUG] Writing to temp file: /Users/07404.chingting.chiu/.claude.json.tmp.96606.1771923643388
+2026-02-24T09:00:43.388Z [DEBUG] Preserving file permissions: 100600
+2026-02-24T09:00:43.389Z [DEBUG] Temp file written successfully, size: 490 bytes
+2026-02-24T09:00:43.389Z [DEBUG] Applied original permissions to temp file
+2026-02-24T09:00:43.389Z [DEBUG] Renaming /Users/07404.chingting.chiu/.claude.json.tmp.96606.1771923643388 to /Users/07404.chingting.chiu/.claude.json
+2026-02-24T09:00:43.390Z [DEBUG] File /Users/07404.chingting.chiu/.claude.json written atomically
+2026-02-24T09:00:43.401Z [DEBUG] High write ratio: blit=0, write=1222 (100.0% writes), screen=28x233
+2026-02-24T09:21:15.775Z [DEBUG] Full reset (shrink->below): prevHeight=28, nextHeight=17, viewport=25

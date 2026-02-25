@@ -1,0 +1,104 @@
+# LiveData → StateFlow/SharedFlow Migration
+
+Migrate the ViewModel for the feature: **$ARGUMENTS**
+
+Follow these steps exactly. Read the full migration plan at:
+`/Users/07404.chingting.chiu/.claude/projects/-Users-07404-chingting-chiu-Documents-AndroidStudioProject-android-188asia2/memory/livedata_to_stateflow_migration.md`
+
+---
+
+## Step 0 — Pre-flight: collect all facts
+
+1. `grep -rn "<ViewModelName>"` to find every Activity/Fragment using this ViewModel.
+2. Read each layout XML bound to this ViewModel (`binding.vm = ...`):
+   - Find every `android:onClick="@{vm::someMethod}"` — these emit effects that ALL screens must handle.
+   - Find every `android:visibility / android:text / ...` bound to VM fields — these must stay as LiveData (Category A).
+3. Read every Activity/Fragment using the ViewModel:
+   - List all `mViewModel.xxx.observe(...)` calls.
+   - List all `mViewModel.xxx.value = ...` mutations from outside the VM (result callbacks, adapter clicks, etc.).
+4. Read the ViewModel itself fully.
+
+## Step 1 — Classify all MutableLiveData fields
+
+| Category | Rule | Action |
+|---|---|---|
+| A | Used in XML `@{vm.field}` OR mutated from outside the VM | **Keep as MutableLiveData** |
+| B | Ongoing UI state (loading, enabled/disabled) | Move to `XxxUiState` data class |
+| C | One-time events (navigation, errors, dialogs) | Move to `XxxEffect` sealed interface |
+
+**Special case**: if `ListPopupWindow.setChooserAdapter(list, liveData)` uses the field → must stay Category A.
+
+## Step 2 — Create `model/data/XxxModels.kt`
+
+```kotlin
+data class XxxUiState(
+    val isLoading: Boolean = false
+    // add other B-category fields
+)
+
+sealed interface XxxEffect {
+    // one entry per C-category event
+}
+```
+
+Place alongside existing data files in `revamp/model/data/`.
+
+## Step 3 — Refactor the ViewModel
+
+- Store `context.applicationContext`, not Activity context.
+- Add `_state: MutableStateFlow<XxxUiState>` and `_effects: MutableSharedFlow<XxxEffect>(extraBufferCapacity = 1)`.
+- Replace every `progressDialogObservable.value = x` → `_state.update { it.copy(isLoading = x) }`.
+- Replace every `(context as IBaseXxx).method()` and `XxxActivity.launch(context as Activity, ...)` → emit an Effect.
+- Replace every one-time LiveData result → emit an Effect inside `viewModelScope.launch { _effects.emit(...) }`.
+- Remove any `IBaseXxx` interface from the ViewModel.
+
+## Step 4 — Refactor each View (Activity / Fragment)
+
+For **every** screen using this ViewModel:
+
+1. Remove `IBaseXxx` from the class declaration.
+2. Remove observers for Category B/C LiveData.
+3. **Keep** observers for Category A LiveData.
+4. Add inside `initData()`:
+
+```kotlin
+lifecycleScope.launch {
+    repeatOnLifecycle(Lifecycle.State.STARTED) {
+        launch { mViewModel.state.collect { render(it) } }
+        launch { mViewModel.effects.collect { handleEffect(it) } }
+    }
+}
+
+private fun render(state: XxxUiState) {
+    if (state.isLoading) showLoadingDialog() else dismissLoadingDialog()
+}
+
+private fun handleEffect(effect: XxxEffect) {
+    when (effect) {
+        // handle only effects relevant to this screen; use else -> {} for the rest
+    }
+}
+```
+
+5. **Timing rule**: if a result callback calls `openSuccessPage()` then `finish()`, remove `finish()` from the callback — call it inside the effect handler after launching the next screen.
+
+## Step 5 — Audit every other screen using this ViewModel
+
+- For each screen, list which effects its flows can trigger.
+- Ensure `effects.collect` is present and handles those effects.
+- Use `else -> {}` for effects that can never be emitted from that screen's context.
+- Check every XML `android:onClick="@{vm::method}"`— the emitted effect must be handled in every screen that uses that layout.
+
+## Step 6 — Delete unused callback interfaces
+
+`grep -rn "IBaseXxx"` — if zero references remain, delete the file.
+
+## Step 7 — Verification checklist
+
+- [ ] Deleted interface has zero references.
+- [ ] Removed LiveData fields have zero references.
+- [ ] Every screen using the ViewModel collects `effects`.
+- [ ] Every `android:onClick="@{vm::method}"` has a handler in every screen using that layout.
+- [ ] Loading dialog shows/hides correctly via `state.isLoading`.
+- [ ] No Activity context stored in ViewModel (only ApplicationContext).
+- [ ] `finish()` timing is correct — not called before effect is consumed.
