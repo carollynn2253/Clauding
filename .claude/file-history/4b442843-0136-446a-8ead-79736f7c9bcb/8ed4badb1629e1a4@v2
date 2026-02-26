@@ -1,0 +1,78 @@
+package com.xuenn.bet188.revamp.viewmodel
+
+import android.content.Context
+import android.view.View
+import com.xuenn.bet188.comm.network.ErrorCode
+import com.xuenn.bet188.comm.network.SpiOAuthRebinding
+import com.xuenn.bet188.comm.network.SpiResponse
+import com.xuenn.bet188.revamp.model.data.OAuthUserData
+import com.xuenn.bet188.revamp.model.data.UiStr
+import com.xuenn.bet188.revamp.model.data.repo.LoginRepository
+import com.xuenn.bet188.revamp.model.data.repo.StringsRepository
+import com.xuenn.bet188.revamp.utils.FirebaseHelper
+import com.xuenn.bet188.revamp.view.login.ContinueLoginActivity.Companion.FAIL_TOO_MANY
+import kotlinx.coroutines.flow.update
+
+
+open class ContinueLoginViewModel(
+    firebaseHelper: FirebaseHelper,
+    private val repo: LoginRepository
+) : LoginViewModel(firebaseHelper, repo) {
+    private val TAG: String = this.javaClass.simpleName
+
+    private var failCount: Int = 0
+
+    override fun init(context: Context) {
+        this.context = context.applicationContext
+        failCount = 0
+    }
+
+    open fun onCloseClick(view: View) {
+        emitEffect(LoginEffect.Close)
+    }
+
+    fun performContinueLogin(userName: String, pwd: String, oAuthUserData: OAuthUserData) {
+        _state.update { it.copy(isLoading = true) }
+        return repo.oAuthRebinding(
+            context, userCode = userName, pwd = pwd,
+            oAuthUserData = oAuthUserData,
+            callback = object : SpiResponse<SpiOAuthRebinding.Response>() {
+                override fun onResponse(
+                    resp: SpiOAuthRebinding.Response?, status: Status, failCode: FailCode
+                ): Boolean {
+                    _state.update { it.copy(isLoading = false) }
+                    return if (status === Status.SUCCESS) {
+                        val code = ErrorCode.valueOrGeneralError(resp!!.code)
+                        when (code) {
+                            ErrorCode.COMM0000 -> {
+                                performOAuthLogin(oAuthUserData)
+                                true
+                            }
+
+                            else -> {
+                                failCount++
+
+                                if (failCount >= 3) {
+                                    emitEffect(LoginEffect.ShowErrorDialog(
+                                        title = StringsRepository.getString(UiStr.TITOAUTHTOOMANYATTEMPT),
+                                        message = StringsRepository.getString(UiStr.MSGOAUTHSTOPLOGINATTEMPT),
+                                        buttonText = StringsRepository.getString(UiStr.TXTBTNOAUTHBACKTOLOGIN),
+                                        requestCode = FAIL_TOO_MANY
+                                    ))
+                                } else {
+                                    emitEffect(LoginEffect.ShowErrorDialog(
+                                        title = StringsRepository.getString(UiStr.TXTLOGINFAIL),
+                                        message = code.getFormattedMessage()
+                                    ))
+                                }
+                                true
+                            }
+                        }
+                    } else {
+                        emitEffect(LoginEffect.ShowNetworkErrorDialog)
+                        true
+                    }
+                }
+            })
+    }
+}

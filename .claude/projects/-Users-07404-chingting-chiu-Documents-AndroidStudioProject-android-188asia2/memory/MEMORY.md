@@ -1,0 +1,18 @@
+# Project Memory
+
+## Project
+Android betting app (188asia2), package: `com.xuenn.bet188`
+Working dir: `Bet188/application/app/src/main/java/com/xuenn/bet188/`
+
+## Key Conventions
+- Models (UiState/Effect) go at the **bottom of the ViewModel file** as top-level declarations — NOT in separate XxxModels.kt files
+- Exception: `ForgotAccountModels.kt` exists separately (older pattern), new features follow ViewModel-file pattern
+- `revamp/model/data/` — data models, `revamp/viewmodel/` — ViewModels, `revamp/view/` — Activities/Fragments
+
+## LiveData → StateFlow Migration
+See: `livedata_to_stateflow_migration.md`
+- Completed features: **login** (LoginViewModel, ContinueLoginViewModel, LiveChatViewModel + their views), **register** (RegisterViewModel + RegisterActivity, OAuthRegisterActivity; IBaseRegister deleted)
+
+## User Preferences
+- Do NOT show file content in responses ("I can read in other IDE")
+- Keep responses concise

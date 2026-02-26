@@ -1,0 +1,370 @@
+package com.xuenn.bet188.revamp.viewmodel
+
+import android.app.Activity
+import android.content.Context
+import android.graphics.Typeface
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.StyleSpan
+import android.view.View
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.xuenn.bet188.R
+import com.xuenn.bet188.comm.network.ErrorCode
+import com.xuenn.bet188.comm.network.SpiLogin
+import com.xuenn.bet188.comm.network.SpiResponse
+import com.xuenn.bet188.comm.network.SpiSponsorSetting
+import com.xuenn.bet188.revamp.callback.IGoogleOAuthGetListener
+import com.xuenn.bet188.revamp.model.data.Constants
+import com.xuenn.bet188.revamp.model.data.GuideWebObject
+import com.xuenn.bet188.revamp.model.data.MFAChallengeObject
+import com.xuenn.bet188.revamp.model.data.OAuthUserData
+import com.xuenn.bet188.revamp.model.data.UiStr
+import com.xuenn.bet188.revamp.model.data.repo.LoginRepository
+import com.xuenn.bet188.revamp.model.data.repo.StringsRepository.getString
+import com.xuenn.bet188.revamp.utils.FirebaseHelper
+import com.xuenn.bet188.revamp.utils.RegionUtil
+import com.xuenn.bet188.revamp.utils.WebViewUtils.prepareUrlAndHeaders
+import com.xuenn.bet188.revamp.utils.hideKeyboard
+import com.xuenn.bet188.revamp.utils.oauth.GoogleOAuthHelper
+import com.xuenn.bet188.revamp.utils.oauth.GoogleOAuthUtil
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.util.*
+
+open class LoginViewModel(
+    private val firebaseHelper: FirebaseHelper,
+    private val repo: LoginRepository
+) : BaseViewModel(), IGoogleOAuthGetListener {
+    private val TAG: String = this.javaClass.simpleName
+
+    private val _state = MutableStateFlow(LoginUiState())
+    val state = _state.asStateFlow()
+
+    private val _effects = MutableSharedFlow<LoginEffect>(extraBufferCapacity = 1)
+    val effects = _effects.asSharedFlow()
+
+    lateinit var context: Context
+
+    val isEnableGoogleOAuth = MutableLiveData<Boolean>(false)
+    val isEnableFacebookOAuth = MutableLiveData<Boolean?>(null)
+
+    protected fun emitEffect(effect: LoginEffect) {
+        viewModelScope.launch { _effects.emit(effect) }
+    }
+
+    override fun setProgressStatus(isInProgress: Boolean) {
+        _state.update { it.copy(isLoading = isInProgress) }
+    }
+
+    open fun init(context: Context) {
+        this.context = context.applicationContext
+
+        isEnableGoogleOAuth.value = RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowGoogleOAuth
+                && RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowGoogleOAuth
+        if (RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowFacebookOAuth == null ||
+            RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowFacebookOAuth == null
+        ) {
+            isEnableFacebookOAuth.value = null
+        } else {
+            isEnableFacebookOAuth.value = RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowFacebookOAuth!!
+                    && RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowFacebookOAuth!!
+        }
+    }
+
+    fun onForgetClick(view: View) {
+        view.context.hideKeyboard(view)
+        emitEffect(LoginEffect.NavigateToForgotAccount)
+    }
+
+    fun onSignUpClick(view: View) {
+        view.context.hideKeyboard(view)
+        emitEffect(LoginEffect.NavigateToRegister)
+    }
+
+    fun onGuideLinkClick(view: View) {
+        view.context.hideKeyboard(view)
+        val (url, headers) = prepareUrlAndHeaders(context, context.getString(R.string.urlOAuthLinkGuide))
+        emitEffect(LoginEffect.NavigateToGuideWeb(GuideWebObject(url, headers)))
+    }
+
+    fun saveLockPattern(lockPattenKey: String = "") {
+        repo.setLockPatternEnable(context, true)
+        repo.setLockPattern(context, lockPattenKey)
+    }
+
+    fun setEnableBioAuth(isEnable: Boolean) {
+        repo.setEnableBioAuth(context, isEnable)
+    }
+
+    open fun openSuccessPage(isNewTrustDevice: Boolean = false) {
+        emitEffect(
+            if (repo.isAdaChatBotDisplay(context)) LoginEffect.NavigateToLiveChat
+            else LoginEffect.NavigateToHomeLobby(isNewTrustDevice)
+        )
+    }
+
+    fun performGetSponsorList() {
+        repo.sponsorSetting(context, object : SpiResponse<SpiSponsorSetting.Response>() {
+            override fun onResponse(resp: SpiSponsorSetting.Response?, status: Status, failCode: FailCode): Boolean {
+                return if (status === Status.SUCCESS) {
+                    val code = ErrorCode.valueOrGeneralError(resp!!.code)
+                    if (ErrorCode.COMM0000 === code) {
+                        repo.saveSponsorList(context, resp.body.sponsorSettings)
+                        emitEffect(LoginEffect.SponsorUpdated(true))
+                        true
+                    } else {
+                        emitEffect(LoginEffect.SponsorUpdated(false))
+                        firebaseHelper.logEvent(TAG, "get Sponsor fail -> code: $code")
+                        true
+                    }
+                } else {
+                    emitEffect(LoginEffect.SponsorUpdated(false))
+                    firebaseHelper.logEvent(TAG, "get Sponsor failure")
+                    true
+                }
+            }
+        })
+    }
+
+    fun onTrustDeviceSuccess(context: Context) {
+        performGetSponsorList()
+        emitEffect(LoginEffect.LoginSuccess)
+        repo.getGeneralSettings(context.applicationContext, Constants.UpdateDeviceInfoEntry.LOGIN)
+    }
+
+    fun performLogin(userName: String, pwd: String) {
+        _state.update { it.copy(isLoading = true) }
+        return repo.login(context, userName, pwd, object : SpiResponse<SpiLogin.Response>() {
+            override fun onResponse(
+                resp: SpiLogin.Response?, status: Status, failCode: FailCode
+            ): Boolean {
+                _state.update { it.copy(isLoading = false) }
+                if (status === Status.SUCCESS) {
+                    return when (val code = ErrorCode.valueOrGeneralError(resp!!.code)) {
+                        ErrorCode.COMM0000 -> {
+                            if (resp.body.isForceChangePassword) {
+                                emitEffect(LoginEffect.NavigateToChangePwd(resp.body.token))
+                            } else {
+                                repo.saveLoginSuccessInfo(context, resp.body)
+                                performGetSponsorList()
+                                emitEffect(LoginEffect.LoginSuccess)
+                            }
+                            repo.getGeneralSettings(context, Constants.UpdateDeviceInfoEntry.LOGIN)
+                            true
+                        }
+
+                        ErrorCode.LOGN0008 -> {
+                            emitEffect(LoginEffect.NavigateToForgotAccount)
+                            true
+                        }
+
+                        ErrorCode.LOGN0020 -> {
+                            if (resp.body.mfaChallenge == null)
+                                false
+                            else {
+                                emitEffect(LoginEffect.VerifyDevice(resp.body.mfaChallenge))
+                                true
+                            }
+                        }
+
+                        ErrorCode.ITGR9999,
+                        ErrorCode.ITGR0012 -> {
+                            emitEffect(LoginEffect.ShowErrorDialog(
+                                title = getString(UiStr.TXTLOGINFAIL),
+                                message = getString(UiStr.MSGCOMERROCCUR)
+                            ))
+                            true
+                        }
+
+                        ErrorCode.LOGN0006,
+                        ErrorCode.LOGN0007 -> {
+                            emitEffect(LoginEffect.ShowErrorDialog(
+                                title = getString(UiStr.TXTLOGINFAIL),
+                                message = code.getFormattedMessage()
+                            ))
+                            true
+                        }
+
+                        ErrorCode.ITGR0013,
+                        ErrorCode.ITGR0014 -> {
+                            val oriStr = SpannableStringBuilder(getString(UiStr.MSGOAUTHLOGINERROR))
+                            val forgetStr = getString(UiStr.MSGOAUTHLOGINERRORBOLD)
+                            val end: Int = forgetStr.length + oriStr.toString().indexOf(forgetStr)
+                            oriStr.setSpan(StyleSpan(Typeface.BOLD), oriStr.toString().indexOf(forgetStr), end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                            emitEffect(LoginEffect.ShowErrorDialog(
+                                title = getString(UiStr.TXTLOGINFAIL),
+                                message = oriStr
+                            ))
+                            true
+                        }
+
+                        else -> {
+                            emitEffect(LoginEffect.ShowErrorDialog(
+                                title = getString(UiStr.TXTLOGINFAIL),
+                                message = code.getFormattedMessage()
+                            ))
+                            true
+                        }
+                    }
+                } else {
+                    emitEffect(LoginEffect.ShowNetworkErrorDialog)
+                    return true
+                }
+            }
+        })
+    }
+
+    fun showSelectGoogleAccount(activity: Activity) {
+        viewModelScope.launch {
+            GoogleOAuthHelper.launchSignIn(activity, Calendar.getInstance().timeInMillis, this@LoginViewModel)
+        }
+    }
+
+    override fun googleIdTokenCredentialResponse(tokenCredential: GoogleIdTokenCredential) {
+        performOAuthLogin(
+            OAuthUserData(
+                oAuthType = Constants.OAuthType.Google,
+                oAuthId = GoogleOAuthUtil.getOAuthIdForSPI(tokenCredential.idToken),
+                oAuthEmail = tokenCredential.id,
+                isOAuthEmailVerified = GoogleOAuthUtil.isEmailVerified(tokenCredential.idToken)
+            )
+        )
+    }
+
+    fun performOAuthLogin(
+        oAuthUserData: OAuthUserData
+    ) {
+        _state.update { it.copy(isLoading = true) }
+        return repo.oAuthLogin(
+            context,
+            oAuthUserData = oAuthUserData,
+            callback = object : SpiResponse<SpiLogin.Response>() {
+                override fun onResponse(
+                    resp: SpiLogin.Response?, status: Status, failCode: FailCode
+                ): Boolean {
+                    _state.update { it.copy(isLoading = false) }
+                    if (status === Status.SUCCESS) {
+                        return when (val code = ErrorCode.valueOrGeneralError(resp!!.code)) {
+                            ErrorCode.COMM0000 -> {
+                                if (resp.body.isForceChangePassword) {
+                                    emitEffect(LoginEffect.NavigateToChangePwd(resp.body.token))
+                                } else {
+                                    repo.saveLoginSuccessInfo(context, resp.body)
+                                    performGetSponsorList()
+                                    emitEffect(LoginEffect.LoginSuccess)
+                                }
+                                repo.getGeneralSettings(context, Constants.UpdateDeviceInfoEntry.LOGIN)
+                                true
+                            }
+                            ErrorCode.LOGN0020 -> {
+                                if (resp.body.mfaChallenge == null)
+                                    false
+                                else {
+                                    emitEffect(LoginEffect.VerifyDevice(resp.body.mfaChallenge))
+                                    true
+                                }
+                            }
+                            ErrorCode.LOGN0008 -> {
+                                emitEffect(LoginEffect.NavigateToForgotAccount)
+                                true
+                            }
+
+                            ErrorCode.ITGR9999,
+                            ErrorCode.ITGR0012 -> {
+                                emitEffect(LoginEffect.ShowErrorDialog(
+                                    title = getString(UiStr.TXTLOGINFAIL),
+                                    message = getString(UiStr.MSGCOMERROCCUR)
+                                ))
+                                true
+                            }
+
+                            ErrorCode.ITGR0011 -> {
+                                emitEffect(LoginEffect.NavigateToOAuthRegister(oAuthUserData))
+                                true
+                            }
+
+                            ErrorCode.ITGR0013,
+                            ErrorCode.ITGR0014 -> {
+                                val oriStr = SpannableStringBuilder(getString(UiStr.MSGOAUTHLOGINERROR))
+                                val forgetStr = getString(UiStr.MSGOAUTHLOGINERRORBOLD)
+                                val end: Int = forgetStr.length + oriStr.toString().indexOf(forgetStr)
+                                oriStr.setSpan(StyleSpan(Typeface.BOLD), oriStr.toString().indexOf(forgetStr), end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+                                emitEffect(LoginEffect.ShowErrorDialog(
+                                    title = getString(UiStr.TXTLOGINFAIL),
+                                    message = oriStr
+                                ))
+                                true
+                            }
+
+                            ErrorCode.ITGR0015 -> {
+                                emitEffect(LoginEffect.NavigateToContinueLogin(oAuthUserData))
+                                true
+                            }
+
+                            ErrorCode.LOGN0006,
+                            ErrorCode.LOGN0007 -> {
+                                emitEffect(LoginEffect.ShowErrorDialog(
+                                    title = getString(UiStr.TXTLOGINFAIL),
+                                    message = code.getFormattedMessage()
+                                ))
+                                true
+                            }
+
+                            else -> {
+                                emitEffect(LoginEffect.ShowErrorDialog(
+                                    title = getString(UiStr.TXTLOGINFAIL),
+                                    message = code.getFormattedMessage()
+                                ))
+                                true
+                            }
+                        }
+                    } else {
+                        emitEffect(LoginEffect.ShowNetworkErrorDialog)
+                        return true
+                    }
+                }
+            })
+    }
+}
+
+data class LoginUiState(
+    val isLoading: Boolean = false
+)
+
+sealed interface LoginEffect {
+    // Navigation
+    data object NavigateToForgotAccount : LoginEffect
+    data object NavigateToRegister : LoginEffect
+    data class NavigateToGuideWeb(val data: GuideWebObject) : LoginEffect
+    data class NavigateToChangePwd(val token: String) : LoginEffect
+    data class NavigateToOAuthRegister(val oAuthUserData: OAuthUserData) : LoginEffect
+    data class NavigateToContinueLogin(val oAuthUserData: OAuthUserData) : LoginEffect
+    data class NavigateToHomeLobby(val isNewTrustDevice: Boolean) : LoginEffect
+    data object NavigateToLiveChat : LoginEffect
+    data object NavigateToLiveChatClearTop : LoginEffect
+    data object NavigateToLoginClearTop : LoginEffect
+    data object NavigateToLiveChatAsGuest : LoginEffect
+    data object GoBack : LoginEffect
+    data object Close : LoginEffect
+
+    // Login results
+    data object LoginSuccess : LoginEffect
+    data object LoginOAuthFail : LoginEffect
+    data class VerifyDevice(val mfaData: MFAChallengeObject) : LoginEffect
+    data class SponsorUpdated(val isSuccess: Boolean) : LoginEffect
+
+    // Dialogs
+    data class ShowErrorDialog(
+        val title: CharSequence,
+        val message: CharSequence,
+        val buttonText: CharSequence? = null,
+        val requestCode: Int = 0
+    ) : LoginEffect
+    data object ShowNetworkErrorDialog : LoginEffect
+}

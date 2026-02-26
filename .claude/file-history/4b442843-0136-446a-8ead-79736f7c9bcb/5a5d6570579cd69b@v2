@@ -1,0 +1,44 @@
+package com.xuenn.bet188.revamp.viewmodel
+
+import android.view.View
+import androidx.lifecycle.viewModelScope
+import com.xuenn.bet188.data.Bet188SharePreferences
+import com.xuenn.bet188.revamp.model.data.repo.LoginRepository
+import com.xuenn.bet188.revamp.model.data.repo.ServerStatusHandler
+import com.xuenn.bet188.revamp.utils.AllModuleStatusCheckUtil
+import com.xuenn.bet188.revamp.utils.FirebaseHelper
+import kotlinx.coroutines.launch
+
+
+class LiveChatViewModel(
+    firebaseHelper: FirebaseHelper,
+    private val repo: LoginRepository,
+    private val handler: ServerStatusHandler
+) : LoginViewModel(firebaseHelper, repo) {
+
+    init {
+        viewModelScope.launch {
+            repo.setServerResponseHandler(handler)
+        }
+    }
+
+    fun onCloseClick(view: View) {
+        if (Bet188SharePreferences.getInstance(context).appIsEnable) {
+            emitEffect(LoginEffect.NavigateToLoginClearTop)
+        } else {
+            AllModuleStatusCheckUtil.restartRoutine(true)
+        }
+    }
+
+    fun onBackClick(view: View) {
+        emitEffect(LoginEffect.GoBack)
+    }
+
+    fun onGuestClick(view: View) {
+        emitEffect(LoginEffect.NavigateToLiveChatAsGuest)
+    }
+
+    override fun openSuccessPage(isNewTrustDevice: Boolean) {
+        emitEffect(LoginEffect.NavigateToLiveChatClearTop)
+    }
+}

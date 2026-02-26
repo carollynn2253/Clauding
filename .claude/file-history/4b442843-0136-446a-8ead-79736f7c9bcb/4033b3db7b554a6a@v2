@@ -1,0 +1,222 @@
+package com.xuenn.bet188.revamp.view.livechat
+
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.os.Bundle
+import android.text.Editable
+import android.text.TextUtils
+import android.text.TextWatcher
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.os.bundleOf
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import com.xuenn.bet188.R
+import com.xuenn.bet188.activity.LiveChatActivity
+import com.xuenn.bet188.comm.config.ConstantsBet188
+import com.xuenn.bet188.comm.dialog.DialogUtil
+import com.xuenn.bet188.databinding.FragmentLiveChatLoginBinding
+import com.xuenn.bet188.revamp.model.data.Constants
+import com.xuenn.bet188.revamp.model.data.UiStr
+import com.xuenn.bet188.revamp.utils.CommonUtils
+import com.xuenn.bet188.revamp.model.data.repo.StringsRepository.getString
+import com.xuenn.bet188.revamp.utils.disableCopyPaste
+import com.xuenn.bet188.revamp.utils.hideKeyboard
+import com.xuenn.bet188.revamp.view.ChangePwdActivity
+import com.xuenn.bet188.revamp.view.base.BaseBindingFragment
+import com.xuenn.bet188.revamp.view.forgotaccount.ForgotAccountActivity
+import com.xuenn.bet188.revamp.view.lockpattern.LockPatternActivity
+import com.xuenn.bet188.revamp.view.login.LoginActivity
+import com.xuenn.bet188.revamp.viewmodel.LOCK_PATTERN_FUNCTION_KEY
+import com.xuenn.bet188.revamp.viewmodel.LiveChatViewModel
+import com.xuenn.bet188.revamp.viewmodel.LobbyViewModel
+import com.xuenn.bet188.revamp.viewmodel.LockPatternFunction
+import com.xuenn.bet188.revamp.viewmodel.LoginEffect
+import com.xuenn.bet188.revamp.viewmodel.LoginUiState
+import com.xuenn.bet188.revamp.viewmodel.RESULT_DATA_SAVE_KEY
+import kotlinx.coroutines.launch
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
+
+class LiveChatLoginFragment : BaseBindingFragment<FragmentLiveChatLoginBinding>() {
+
+    private val mViewModel: LiveChatViewModel by viewModel { parametersOf(requireContext()) }
+    private val mLobbyViewModel: LobbyViewModel by viewModel { parametersOf(requireContext()) }
+
+    private var usernameBeEdited: Boolean = false
+    private var pwdBeEdited: Boolean = false
+
+    companion object {
+        fun newInstance(bundle: Bundle?) = LiveChatLoginFragment().apply {
+            arguments = Bundle().apply {
+                if (bundle != null)
+                    putString(Constants.BUNDLE_ACCOUNT, bundle.getString(Constants.BUNDLE_ACCOUNT, ""))
+            }
+        }
+    }
+
+    override fun getLayoutId() = R.layout.fragment_live_chat_login
+
+    override fun initData() {
+        mViewModel.init(requireContext())
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { mViewModel.state.collect { render(it) } }
+                launch { mViewModel.effects.collect { handleEffect(it) } }
+            }
+        }
+
+        mLobbyViewModel.isThemeDone.observe(this) { isThemeDone ->
+            if (isThemeDone) {
+                mViewModel.setEnableBioAuth(false)
+                openUpLockPatternSetting()
+            }
+        }
+        binding.vm = mViewModel
+    }
+
+    private fun render(state: LoginUiState) {
+        if (state.isLoading) showLoadingDialog() else dismissLoadingDialog()
+    }
+
+    private fun handleEffect(effect: LoginEffect) {
+        when (effect) {
+            LoginEffect.LoginSuccess -> mLobbyViewModel.fetchRegionTheme(requireContext())
+
+            LoginEffect.NavigateToLiveChatClearTop -> {
+                LiveChatActivity.launchClearTop(requireActivity(), ConstantsBet188.FrameIn_Index_LiveChat)
+                requireActivity().finish()
+                requireActivity().finishAffinity()
+            }
+
+            LoginEffect.NavigateToLoginClearTop -> {
+                val intent = Intent(requireContext(), LoginActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                startActivity(intent)
+            }
+
+            LoginEffect.NavigateToLiveChatAsGuest -> {
+                LiveChatAsGuestActivity.launchAsGuest(requireActivity(), ConstantsBet188.FrameIn_Index_LiveChat)
+            }
+
+            LoginEffect.GoBack -> requireActivity().finish()
+
+            LoginEffect.NavigateToForgotAccount -> ForgotAccountActivity.launch(requireActivity())
+
+            is LoginEffect.NavigateToChangePwd -> ChangePwdActivity.launch(requireActivity(), effect.token)
+
+            is LoginEffect.ShowErrorDialog -> {
+                val btnText = effect.buttonText ?: getString(UiStr.TXTBTNCOMOK)
+                DialogUtil.showSimpleDialog(requireActivity(), effect.title, effect.message, btnText, effect.requestCode)
+            }
+
+            LoginEffect.ShowNetworkErrorDialog -> DialogUtil.showNetworkErrorDialog(requireActivity(), DialogUtil.API_RETURN_FAIL)
+
+            else -> {}
+        }
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        if (arguments != null) {
+            requireArguments().getString(Constants.BUNDLE_ACCOUNT).let { if (it != null) binding.username.setText(it) }
+        }
+    }
+
+    override fun initView() {
+
+        // Disable copy paste for EditText
+        binding.username.disableCopyPaste()
+        binding.pwd.disableCopyPaste()
+
+        binding.username.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+                binding.usernameLayout.error = ""
+            }
+
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(editable: Editable) {
+                usernameBeEdited = true
+                checkIsEnableLoginBtn()
+            }
+        })
+        binding.username.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && usernameBeEdited) {
+                if ((binding.username.text!!.isEmpty()))
+                    binding.usernameLayout.error = getString(UiStr.HELPJOINUSREQUIRED)
+            }
+        }
+
+        binding.pwd.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+                binding.pwdLayout.error = ""
+            }
+
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(editable: Editable) {
+                pwdBeEdited = true
+                checkIsEnableLoginBtn()
+            }
+        })
+
+        binding.pwd.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && pwdBeEdited) {
+                if ((binding.pwd.text!!.isEmpty()))
+                    binding.pwdLayout.error = getString(UiStr.HELPJOINUSREQUIRED)
+            }
+        }
+
+        //btn
+        binding.btnLogin.setOnClickListener {
+            requireContext().hideKeyboard(binding.btnLogin)
+
+            mViewModel.performLogin(binding.username.text.toString(), binding.pwd.text.toString())
+        }
+    }
+
+    fun checkIsEnableLoginBtn() {
+        binding.btnLogin.isEnabled = !TextUtils.isEmpty(binding.username.text) && binding.username.text.toString().length >= 5
+                && !TextUtils.isEmpty(binding.pwd.text) && binding.pwd.text.toString().length >= 5
+    }
+
+    private fun openUpLockPatternSetting() {
+        val intent = Intent(requireContext(), LockPatternActivity::class.java).apply {
+            putExtras(
+                bundleOf(
+                    LOCK_PATTERN_FUNCTION_KEY to LockPatternFunction.SET_KEY
+                )
+            )
+        }
+        lockPatternActivityLaunchForResult.launch(intent)
+    }
+
+    private var lockPatternActivityLaunchForResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val resultDataIntent: Intent? = result.data
+        if (result.resultCode == Activity.RESULT_OK) {
+            val lockPattenKey = resultDataIntent?.getStringExtra(RESULT_DATA_SAVE_KEY) ?: ""
+            mViewModel.saveLockPattern(lockPattenKey)
+            mViewModel.openSuccessPage()
+            // finish() and finishAffinity() are handled in handleEffect(NavigateToLiveChatClearTop)
+        } else {
+            CommonUtils.handleUserLogout(requireContext(), false)
+            recreateActivity()
+        }
+    }
+
+    private fun recreateActivity() {
+        Intent(requireContext(), LiveChatLoginActivity::class.java).apply {
+            if (binding.username.text!!.isNotEmpty()) {
+                val bundle = Bundle()
+                bundle.putString(Constants.BUNDLE_ACCOUNT, binding.username.text.toString())
+                putExtras(bundle)
+            }
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            startActivity(this)
+        }
+    }
+}

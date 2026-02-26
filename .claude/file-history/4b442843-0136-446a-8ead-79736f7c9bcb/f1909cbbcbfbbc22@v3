@@ -1,0 +1,387 @@
+package com.xuenn.bet188.revamp.viewmodel
+
+import android.app.Activity
+import android.content.Context
+import android.graphics.Typeface
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.style.StyleSpan
+import android.view.View
+import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.viewModelScope
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.xuenn.bet188.R
+import com.xuenn.bet188.activity.LiveChatActivity
+import com.xuenn.bet188.comm.config.ConstantsBet188
+import com.xuenn.bet188.comm.dialog.DialogUtil
+import com.xuenn.bet188.comm.network.ErrorCode
+import com.xuenn.bet188.comm.network.SpiLogin
+import com.xuenn.bet188.comm.network.SpiResponse
+import com.xuenn.bet188.comm.network.SpiSponsorSetting
+import com.xuenn.bet188.revamp.callback.IGoogleOAuthGetListener
+import com.xuenn.bet188.revamp.model.data.Constants
+import com.xuenn.bet188.revamp.model.data.GuideWebObject
+import com.xuenn.bet188.revamp.model.data.MFAChallengeObject
+import com.xuenn.bet188.revamp.model.data.OAuthUserData
+import com.xuenn.bet188.revamp.model.data.UiStr
+import com.xuenn.bet188.revamp.model.data.repo.LoginRepository
+import com.xuenn.bet188.revamp.model.data.repo.StringsRepository.getString
+import com.xuenn.bet188.revamp.utils.FirebaseHelper
+import com.xuenn.bet188.revamp.utils.RegionUtil
+import com.xuenn.bet188.revamp.utils.WebViewUtils.prepareUrlAndHeaders
+import com.xuenn.bet188.revamp.utils.hideKeyboard
+import com.xuenn.bet188.revamp.utils.oauth.GoogleOAuthHelper
+import com.xuenn.bet188.revamp.utils.oauth.GoogleOAuthUtil
+import com.xuenn.bet188.revamp.view.ChangePwdActivity
+import com.xuenn.bet188.revamp.view.GuideWebActivity
+import com.xuenn.bet188.revamp.view.forgotaccount.ForgotAccountActivity
+import com.xuenn.bet188.revamp.view.lobby.HomeLobbyActivity
+import com.xuenn.bet188.revamp.view.login.ContinueLoginActivity
+import com.xuenn.bet188.revamp.view.register.OAuthRegisterActivity
+import com.xuenn.bet188.revamp.view.register.RegisterTypeSelectActivity
+import kotlinx.coroutines.launch
+import java.util.*
+
+open class LoginViewModel(
+    private val firebaseHelper: FirebaseHelper,
+    private val repo: LoginRepository
+) : BaseViewModel(), IGoogleOAuthGetListener {
+    private val TAG: String = this.javaClass.simpleName
+
+    lateinit var context: Context
+    val isEnableGoogleOAuth = MutableLiveData<Boolean>(false)
+    val isEnableFacebookOAuth = MutableLiveData<Boolean?>(null)
+    val isSponsorUpdated = MutableLiveData<Boolean>()
+    val loginReturnStatus = MutableLiveData<LoginResult>()
+
+
+    open fun init(context: Context) {
+        this.context = context
+
+        isEnableGoogleOAuth.value = RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowGoogleOAuth
+                && RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowGoogleOAuth
+        if (RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowFacebookOAuth == null ||
+            RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowFacebookOAuth == null
+        ) {
+            isEnableFacebookOAuth.value = null
+        } else {
+            isEnableFacebookOAuth.value = RegionUtil.getRegion(context, repo.getCurrentIpRegion(context).regionCode, null).isAllowFacebookOAuth!!
+                    && RegionUtil.getRegion(context, repo.getUserRegion(context).regionCode, null).isAllowFacebookOAuth!!
+        }
+    }
+
+    fun onForgetClick(view: View) {
+        context.hideKeyboard(view)
+        com.xuenn.bet188.revamp.view.forgotaccount.ForgotAccountActivity.launch(context as Activity)
+
+//        ForgotAccountActivity.launch(context as Activity)
+    }
+
+    fun onSignUpClick(view: View) {
+        context.hideKeyboard(view)
+
+        RegisterTypeSelectActivity.launch(context as Activity)
+    }
+
+    fun onGuideLinkClick(view: View) {
+        context.hideKeyboard(view)
+
+        val (url, headers) = prepareUrlAndHeaders(context, context.getString(R.string.urlOAuthLinkGuide))
+        GuideWebActivity.launch(context as Activity, GuideWebObject(url, headers))
+    }
+
+    fun saveLockPattern(lockPattenKey: String = "") {
+        repo.setLockPatternEnable(context, true)
+        repo.setLockPattern(context, lockPattenKey)
+    }
+
+    fun setEnableBioAuth(isEnable: Boolean) {
+        repo.setEnableBioAuth(context, isEnable)
+    }
+
+    open fun openSuccessPage(isNewTrustDevice: Boolean = false) {
+        if (repo.isAdaChatBotDisplay(context)) {
+            LiveChatActivity.launch(context as Activity, ConstantsBet188.FrameIn_Index_LiveChat)
+        } else {
+            HomeLobbyActivity.launch(context, false, isNewTrustDevice)
+        }
+    }
+
+    fun performGetSponsorList() {
+        repo.sponsorSetting(context, object : SpiResponse<SpiSponsorSetting.Response>() {
+            override fun onResponse(resp: SpiSponsorSetting.Response?, status: Status, failCode: FailCode): Boolean {
+                return if (status === Status.SUCCESS) {
+                    val code = ErrorCode.valueOrGeneralError(resp!!.code)
+                    if (ErrorCode.COMM0000 === code) {
+                        //prepare for lobby, because only lobby need to show sponsor
+                        repo.saveSponsorList(context, resp.body.sponsorSettings)
+                        isSponsorUpdated.value = true
+                        true
+                    } else {
+                        isSponsorUpdated.value = false
+                        firebaseHelper.logEvent(TAG, "get Sponsor fail -> code: $code")
+                        true
+                    }
+                } else {
+                    isSponsorUpdated.value = false
+                    firebaseHelper.logEvent(TAG, "get Sponsor failure")
+                    true
+                }
+            }
+        })
+    }
+
+    fun onTrustDeviceSuccess(context: Context) {
+        performGetSponsorList()
+        loginReturnStatus.value = LoginResult.Success
+
+        // Fetch the general setting by region
+        repo.getGeneralSettings(context.applicationContext, Constants.UpdateDeviceInfoEntry.LOGIN)
+    }
+
+    fun performLogin(userName: String, pwd: String) {
+        progressDialogObservable.value = true
+        return repo.login(context, userName, pwd, object : SpiResponse<SpiLogin.Response>() {
+            override fun onResponse(
+                resp: SpiLogin.Response?, status: Status, failCode: FailCode
+            ): Boolean {
+                progressDialogObservable.value = false
+                if (status === Status.SUCCESS) {
+                    return when (val code = ErrorCode.valueOrGeneralError(resp!!.code)) {
+                        ErrorCode.COMM0000 -> {
+                            if (resp.body.isForceChangePassword) {
+                                ChangePwdActivity.launch(context as Activity, resp.body.token)
+                            } else {
+                                repo.saveLoginSuccessInfo(context, resp.body)
+                                performGetSponsorList()
+                                loginReturnStatus.value = LoginResult.Success
+                            }
+                            // Fetch the general setting by region
+                            repo.getGeneralSettings(context.applicationContext, Constants.UpdateDeviceInfoEntry.LOGIN)
+                            true
+                        }
+
+                        ErrorCode.LOGN0008 -> {
+                            ForgotAccountActivity.launch(context as Activity)
+                            loginReturnStatus.value = LoginResult.Fail
+                            true
+                        }
+
+                        ErrorCode.LOGN0020 -> {
+                            if(resp.body.mfaChallenge == null)
+                                false
+                            else {
+                                loginReturnStatus.value = LoginResult.VerifyDevice(resp.body.mfaChallenge)
+                                true
+                            }
+                        }
+
+                        ErrorCode.ITGR9999,
+                        ErrorCode.ITGR0012 -> {
+                            DialogUtil.showSimpleDialog(
+                                context,
+                                getString(UiStr.TXTLOGINFAIL),
+                                getString(UiStr.MSGCOMERROCCUR),
+                                getString(UiStr.TXTBTNCOMOK),
+                                0
+                            )
+                            loginReturnStatus.value = LoginResult.Fail
+                            true
+                        }
+
+                        ErrorCode.LOGN0006,
+                        ErrorCode.LOGN0007 -> {
+                            DialogUtil.showSimpleDialog(
+                                context,
+                                getString(UiStr.TXTLOGINFAIL),
+                                code.getFormattedMessage(),
+                                getString(UiStr.TXTBTNCOMOK),
+                                0
+                            )
+                            loginReturnStatus.value = LoginResult.Fail
+                            true
+                        }
+
+                        ErrorCode.ITGR0013,
+                        ErrorCode.ITGR0014 -> {
+                            val oriStr = SpannableStringBuilder(getString(UiStr.MSGOAUTHLOGINERROR))
+                            val forgetStr = getString(UiStr.MSGOAUTHLOGINERRORBOLD)
+                            val end: Int = forgetStr.length + oriStr.toString().indexOf(forgetStr)
+                            oriStr.setSpan(StyleSpan(Typeface.BOLD), oriStr.toString().indexOf(forgetStr), end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+                            DialogUtil.showSimpleDialog(
+                                context,
+                                getString(UiStr.TXTLOGINFAIL),
+                                oriStr,
+                                getString(UiStr.TXTBTNCOMOK),
+                                0
+                            )
+                            loginReturnStatus.value = LoginResult.Fail
+                            true
+                        }
+
+                        else -> {
+                            DialogUtil.showSimpleDialog(
+                                context,
+                                getString(UiStr.TXTLOGINFAIL),
+                                code.getFormattedMessage(),
+                                getString(UiStr.TXTBTNCOMOK),
+                                0
+                            )
+                            loginReturnStatus.value = LoginResult.Fail
+                            true
+                        }
+                    }
+                } else {
+                    DialogUtil.showNetworkErrorDialog(context, DialogUtil.API_RETURN_FAIL)
+                    loginReturnStatus.value = LoginResult.Fail
+                    return true
+                }
+            }
+        })
+    }
+
+    fun showSelectGoogleAccount(activity: Activity) {
+        viewModelScope.launch {
+            GoogleOAuthHelper.launchSignIn(activity, Calendar.getInstance().timeInMillis, this@LoginViewModel)
+        }
+    }
+
+    override fun googleIdTokenCredentialResponse(tokenCredential: GoogleIdTokenCredential) {
+        performOAuthLogin(
+            OAuthUserData(
+                oAuthType = Constants.OAuthType.Google,
+                oAuthId = GoogleOAuthUtil.getOAuthIdForSPI(tokenCredential.idToken),
+                oAuthEmail = tokenCredential.id,
+                isOAuthEmailVerified = GoogleOAuthUtil.isEmailVerified(tokenCredential.idToken)
+            )
+        )
+    }
+
+    fun performOAuthLogin(
+        oAuthUserData: OAuthUserData
+    ) {
+        progressDialogObservable.value = true
+        return repo.oAuthLogin(
+            context,
+            oAuthUserData = oAuthUserData,
+            callback = object : SpiResponse<SpiLogin.Response>() {
+                override fun onResponse(
+                    resp: SpiLogin.Response?, status: Status, failCode: FailCode
+                ): Boolean {
+                    progressDialogObservable.value = false
+                    if (status === Status.SUCCESS) {
+                        return when (val code = ErrorCode.valueOrGeneralError(resp!!.code)) {
+                            ErrorCode.COMM0000 -> {
+                                if (resp.body.isForceChangePassword) {
+                                    ChangePwdActivity.launch(context as Activity, resp.body.token)
+                                } else {
+                                    repo.saveLoginSuccessInfo(context, resp.body)
+                                    performGetSponsorList()
+                                    loginReturnStatus.value = LoginResult.Success
+                                }
+                                // Fetch the general setting by region
+                                repo.getGeneralSettings(context, Constants.UpdateDeviceInfoEntry.LOGIN)
+                                true
+                            }
+                            ErrorCode.LOGN0020 -> {
+                                if(resp.body.mfaChallenge == null)
+                                    false
+                                else {
+                                    loginReturnStatus.value = LoginResult.VerifyDevice(resp.body.mfaChallenge)
+                                    true
+                                }
+                            }
+                            ErrorCode.LOGN0008 -> {
+                                ForgotAccountActivity.launch(context as Activity)
+                                loginReturnStatus.value = LoginResult.Fail
+                                true
+                            }
+
+                            ErrorCode.ITGR9999,
+                            ErrorCode.ITGR0012 -> {
+                                DialogUtil.showSimpleDialog(
+                                    context,
+                                    getString(UiStr.TXTLOGINFAIL),
+                                    getString(UiStr.MSGCOMERROCCUR),
+                                    getString(UiStr.TXTBTNCOMOK),
+                                    0
+                                )
+                                loginReturnStatus.value = LoginResult.Fail
+                                true
+                            }
+
+                            ErrorCode.ITGR0011 -> {
+                                //go to OAuthRegisterActivity
+                                OAuthRegisterActivity.launch(context as Activity, oAuthUserData)
+
+                                loginReturnStatus.value = LoginResult.Fail
+                                true
+                            }
+
+                            ErrorCode.ITGR0013,
+                            ErrorCode.ITGR0014 -> {
+                                val oriStr = SpannableStringBuilder(getString(UiStr.MSGOAUTHLOGINERROR))
+                                val forgetStr = getString(UiStr.MSGOAUTHLOGINERRORBOLD)
+                                val end: Int = forgetStr.length + oriStr.toString().indexOf(forgetStr)
+                                oriStr.setSpan(StyleSpan(Typeface.BOLD), oriStr.toString().indexOf(forgetStr), end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+
+                                DialogUtil.showSimpleDialog(
+                                    context,
+                                    getString(UiStr.TXTLOGINFAIL),
+                                    oriStr,
+                                    getString(UiStr.TXTBTNCOMOK),
+                                    0
+                                )
+                                loginReturnStatus.value = LoginResult.Fail
+                                true
+                            }
+
+                            ErrorCode.ITGR0015 -> {
+                                ContinueLoginActivity.launch(context as Activity, oAuthUserData)
+                                loginReturnStatus.value = LoginResult.Fail
+                                true
+                            }
+
+                            ErrorCode.LOGN0006,
+                            ErrorCode.LOGN0007 -> {
+                                DialogUtil.showSimpleDialog(
+                                    context,
+                                    getString(UiStr.TXTLOGINFAIL),
+                                    code.getFormattedMessage(),
+                                    getString(UiStr.TXTBTNCOMOK),
+                                    0
+                                )
+                                loginReturnStatus.value = LoginResult.Fail
+                                true
+                            }
+
+                            else -> {
+                                DialogUtil.showSimpleDialog(
+                                    context,
+                                    getString(UiStr.TXTLOGINFAIL),
+                                    code.getFormattedMessage(),
+                                    getString(UiStr.TXTBTNCOMOK),
+                                    0
+                                )
+                                loginReturnStatus.value = LoginResult.Fail
+                                true
+                            }
+                        }
+                    } else {
+                        DialogUtil.showNetworkErrorDialog(context, DialogUtil.API_RETURN_FAIL)
+                        loginReturnStatus.value = LoginResult.Fail
+                        return true
+                    }
+                }
+            })
+    }
+
+
+    sealed class LoginResult {
+        data object Success : LoginResult()
+        data object Fail : LoginResult()
+        data object OAuthFail : LoginResult()
+        data class VerifyDevice(val mfaData: MFAChallengeObject) : LoginResult()
+    }
+}

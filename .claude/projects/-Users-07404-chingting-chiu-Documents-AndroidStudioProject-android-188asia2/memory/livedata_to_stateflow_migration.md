@@ -1,0 +1,111 @@
+# LiveData → StateFlow/SharedFlow Migration Guide
+
+## File Placement
+- `LoginUiState` and `LoginEffect` go at the BOTTOM of the ViewModel file (e.g., `LoginViewModel.kt`), NOT in a separate Models file.
+- Pattern: existing nested sealed class (e.g., `LoginResult`) is REPLACED by a top-level `XxxEffect` sealed interface in the same file.
+
+## Classification Rules
+| Category | Rule | Action |
+|---|---|---|
+| A | Used in XML `@{vm.field}` OR mutated from outside the VM | **Keep as MutableLiveData** |
+| B | Ongoing UI state (loading) | `XxxUiState` data class → `_state: MutableStateFlow` |
+| C | One-time events (navigation, errors, dialogs) | `XxxEffect` sealed interface → `_effects: MutableSharedFlow` |
+
+## ViewModel Template
+```kotlin
+// In the ViewModel class:
+private val _state = MutableStateFlow(LoginUiState())
+val state = _state.asStateFlow()
+
+private val _effects = MutableSharedFlow<LoginEffect>(extraBufferCapacity = 1)
+val effects = _effects.asSharedFlow()
+
+protected fun emitEffect(effect: LoginEffect) {
+    viewModelScope.launch { _effects.emit(effect) }
+}
+
+override fun setProgressStatus(isInProgress: Boolean) {
+    _state.update { it.copy(isLoading = isInProgress) }
+}
+
+// Store applicationContext, not Activity:
+open fun init(context: Context) {
+    this.context = context.applicationContext
+}
+
+// onClick methods: use view.context transiently for hideKeyboard, emit effect for nav:
+fun onForgetClick(view: View) {
+    view.context.hideKeyboard(view)
+    emitEffect(LoginEffect.NavigateToForgotAccount)
+}
+
+// At bottom of file (top-level, same package):
+data class LoginUiState(val isLoading: Boolean = false)
+sealed interface LoginEffect { ... }
+```
+
+## View (Activity/Fragment) Template
+```kotlin
+override fun initData() {
+    mViewModel.init(this)
+    lifecycleScope.launch {
+        repeatOnLifecycle(Lifecycle.State.STARTED) {
+            launch { mViewModel.state.collect { render(it) } }
+            launch { mViewModel.effects.collect { handleEffect(it) } }
+        }
+    }
+    // Keep Category-A LiveData observers (e.g., mLobbyViewModel.isThemeDone)
+}
+
+private fun render(state: LoginUiState) {
+    if (state.isLoading) showLoadingDialog() else dismissLoadingDialog()
+}
+
+private fun handleEffect(effect: LoginEffect) {
+    when (effect) {
+        // handle effects relevant to this screen
+        else -> {}
+    }
+}
+```
+
+## Key Rules
+1. `context as Activity` → emit navigation effect, handle in View
+2. `DialogUtil.showSimpleDialog(context,...)` → emit `ShowErrorDialog(title, message, buttonText?, requestCode)` effect
+3. `progressDialogObservable.value = x` (inside VM) → `_state.update { it.copy(isLoading = x) }`
+4. External mutation `mViewModel.progressDialogObservable.value = x` → change to `mViewModel.setProgressStatus(x)`
+5. `finish()` after openSuccessPage → move inside the effect handler AFTER launching next screen
+6. Subclasses override `emitEffect`-based methods — `protected fun emitEffect` is available
+
+## Login Feature (Completed)
+- `LoginViewModel`, `ContinueLoginViewModel`, `LiveChatViewModel` migrated
+- `LoginActivity`, `ContinueLoginActivity`, `LiveChatLoginFragment` updated
+- `LoginResult` sealed class REPLACED by `LoginEffect` sealed interface (bottom of LoginViewModel.kt)
+- `isSponsorUpdated` LiveData → `LoginEffect.SponsorUpdated(Boolean)`
+- `loginReturnStatus` LiveData → `LoginEffect.LoginSuccess / LoginOAuthFail / VerifyDevice`
+- `progressDialogObservable` stays in BaseViewModel; overridden `setProgressStatus` in LoginViewModel uses `_state`
+
+## Effect Taxonomy (LoginEffect)
+Navigation: NavigateToForgotAccount, NavigateToRegister, NavigateToGuideWeb, NavigateToChangePwd,
+            NavigateToOAuthRegister, NavigateToContinueLogin, NavigateToHomeLobby,
+            NavigateToLiveChat, NavigateToLiveChatClearTop, NavigateToLoginClearTop,
+            NavigateToLiveChatAsGuest, GoBack, Close
+Results:    LoginSuccess, LoginOAuthFail, VerifyDevice(mfaData), SponsorUpdated(isSuccess)
+Dialogs:    ShowErrorDialog(title, message, buttonText?, requestCode), ShowNetworkErrorDialog
+
+## Register Feature (Completed)
+- `RegisterViewModel` migrated — `RegisterUiState` + `RegisterEffect` at bottom of file
+- `RegisterActivity` and `OAuthRegisterActivity` updated to collect StateFlow/SharedFlow
+- `IBaseRegister` callback interface DELETED — replaced by effects (OpenRegionSearch, OpenCurrencyChooser, OpenEnterAffiliatePage, CheckEnableRegisterBtn)
+- Category A fields kept as MutableLiveData: `selectedRegion`, `selectedCurrency`, `isEnableGoogleOAuth`, `isEnableFacebookOAuth`, `enableReferAFriend` (all used in XML `@{vm.xxx}` or by `ListPopupWindow.setChooserAdapter`)
+- `registerResponseStatus` LiveData → `RegisterEffect.RegisterResponseStatus(status)`
+- `isRegisterLoginSuccess` LiveData → `RegisterEffect.RegisterLoginSuccess / RegisterLoginFailed`
+- `legalAge` LiveData → `RegisterUiState.legalAge`
+- `progressDialogObservable` → `RegisterUiState.isLoading` via overridden `setProgressStatus`
+- `context` stored as `applicationContext` instead of Activity reference
+- onClick methods use `view.context.hideKeyboard(view)` instead of stored context
+
+## Effect Taxonomy (RegisterEffect)
+Navigation: NavigateToLogin, NavigateToSimpleWeb(webObject), NavigateToSuccessPage(webObject), NavigateToOAuthRegister(oAuthUserData)
+UI Actions: OpenRegionSearch, OpenCurrencyChooser, OpenEnterAffiliatePage, CheckEnableRegisterBtn
+Results:    RegisterResponseStatus(status), RegisterLoginSuccess, RegisterLoginFailed

@@ -1,0 +1,7 @@
+{
+  "model": "opus",
+  "enabledPlugins": {
+    "superpowers@superpowers-dev": true
+  },
+  "effortLevel": "high"
+}

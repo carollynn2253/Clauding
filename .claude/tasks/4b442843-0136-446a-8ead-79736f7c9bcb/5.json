@@ -1,0 +1,9 @@
+{
+  "id": "5",
+  "subject": "Re-apply login migration to all 6 files",
+  "description": "Write the migrated versions of: LoginViewModel.kt, ContinueLoginViewModel.kt, LiveChatViewModel.kt, LoginActivity.kt, ContinueLoginActivity.kt, LiveChatLoginFragment.kt",
+  "activeForm": "Re-applying login LiveData migration to all 6 files",
+  "status": "in_progress",
+  "blocks": [],
+  "blockedBy": []
+}

@@ -1,0 +1,393 @@
+{
+  "numStartups": 10,
+  "installMethod": "native",
+  "autoUpdates": false,
+  "theme": "dark-daltonized",
+  "tipsHistory": {
+    "new-user-warmup": 7,
+    "plan-mode-for-complex-tasks": 7,
+    "terminal-setup": 1,
+    "memory-command": 1,
+    "theme-command": 2,
+    "colorterm-truecolor": 2,
+    "status-line": 2,
+    "prompt-queue": 2,
+    "enter-to-steer-in-relatime": 2,
+    "todo-list": 2,
+    "install-github-app": 2,
+    "install-slack-app": 2,
+    "drag-and-drop-images": 2,
+    "paste-images-mac": 2,
+    "double-esc-code-restore": 2,
+    "continue": 2,
+    "shift-tab": 2,
+    "image-paste": 2,
+    "desktop-app": 2,
+    "web-app": 2,
+    "mobile-app": 2,
+    "ide-upsell-external-terminal": 5,
+    "custom-agents": 6,
+    "agent-flag": 6
+  },
+  "promptQueueUseCount": 14,
+  "cachedGrowthBookFeatures": {
+    "tengu_oboe": true,
+    "tengu_event_sampling_config": {},
+    "tengu_log_segment_events": false,
+    "tengu_log_datadog_events": true,
+    "tengu_penguins_enabled": true,
+    "tengu_mcp_tool_search": true,
+    "tengu_marble_anvil": true,
+    "tengu_tool_pear": false,
+    "tengu_scarf_coffee": false,
+    "tengu_chomp_inflection": true,
+    "tengu_marble_sandcastle": true,
+    "tengu_penguins_off": null,
+    "tengu_streaming_text": false,
+    "tengu_silver_lantern": false,
+    "tengu_birthday_hat": false,
+    "tengu-top-of-feed-tip": {
+      "tip": "",
+      "color": ""
+    },
+    "tengu_snippet_save": false,
+    "tengu_pr_status_cli": true,
+    "tengu_ccr_bridge": false,
+    "tengu_mcp_elicitation": false,
+    "tengu_keybinding_customization_release": true,
+    "tengu_post_compact_survey": false,
+    "tengu_copper_lantern": false,
+    "tengu_claudeai_mcp_connectors": true,
+    "tengu_pebble_leaf_prune": false,
+    "tengu_pid_based_version_locking": true,
+    "enhanced_telemetry_beta": false,
+    "tengu_birch_mist": true,
+    "tengu_tool_search_unsupported_models": [
+      "haiku"
+    ],
+    "tengu_vinteuil_phrase": true,
+    "tengu_system_prompt_global_cache": true,
+    "tengu_attribution_header": true,
+    "tengu_mulberry_fog": false,
+    "tengu_coral_fern": false,
+    "tengu_scratch": false,
+    "tengu_moth_copse": false,
+    "tengu_cache_plum_violet": true,
+    "tengu_streaming_tool_execution2": true,
+    "tengu_coral_whistle": true,
+    "tengu_fgts": false,
+    "tengu_plan_mode_interview_phase": false,
+    "tengu_tst_kx7": false,
+    "tengu_prompt_cache_1h_config": {
+      "allowlist": [
+        "repl_main_thread*",
+        "sdk"
+      ]
+    },
+    "tengu_session_memory": false,
+    "tengu_immediate_model_command": false,
+    "tengu_bergotte_lantern": false,
+    "tengu_swann_brevity": "control",
+    "tengu_permission_explainer": true,
+    "tengu_destructive_command_warning": false,
+    "tengu_oak_drum": false,
+    "tengu_tool_input_aliasing": false,
+    "tengu_1p_event_batch_config": {
+      "scheduledDelayMillis": 5000,
+      "maxExportBatchSize": 200,
+      "maxQueueSize": 8192
+    },
+    "tengu_slate_nexus": false,
+    "tengu_thinkback": false,
+    "tengu_amber_prism": false,
+    "tengu_auto_background_agents": false,
+    "tengu_sm_compact": false,
+    "tengu_compact_cache_prefix": true,
+    "tengu_compact_streaming_retry": false,
+    "tengu_amber_quartz": false,
+    "tengu_marble_lantern_disabled": false,
+    "tengu_crystal_beam": {
+      "budgetTokens": 0
+    }
+  },
+  "firstStartTime": "2026-02-24T08:56:49.644Z",
+  "opusProMigrationComplete": true,
+  "sonnet1m45MigrationComplete": true,
+  "userID": "d4d9e66a1eb3d0fd87a6b6bb2d520ea34cb12ccf154bac948b738764dd11d657",
+  "cachedChromeExtensionInstalled": false,
+  "changelogLastFetched": 1772085935763,
+  "autoUpdatesProtectedForNative": true,
+  "clientDataCache": {
+    "data": {},
+    "timestamp": 1772085935941
+  },
+  "oauthAccount": {
+    "accountUuid": "8482ad33-f9fa-485d-93df-051738941e5a",
+    "emailAddress": "ctchiu121@gmail.com",
+    "organizationUuid": "7284baba-9441-49c2-8d0e-09ffe9a30a3f",
+    "hasExtraUsageEnabled": false,
+    "billingType": "stripe_subscription",
+    "accountCreatedAt": "2026-02-25T02:17:18.370627Z",
+    "subscriptionCreatedAt": "2026-02-25T02:20:30.590097Z",
+    "displayName": "Skye"
+  },
+  "claudeCodeFirstTokenDate": "2026-02-25T02:25:47.096138Z",
+  "hasCompletedOnboarding": true,
+  "lastOnboardingVersion": "2.1.52",
+  "projects": {
+    "/Users/07404.chingting.chiu/Documents": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 1,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "lastCost": 0.018973749999999998,
+      "lastAPIDuration": 5269,
+      "lastAPIDurationWithoutRetries": 5215,
+      "lastToolDuration": 0,
+      "lastDuration": 386899,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 293,
+      "lastTotalOutputTokens": 145,
+      "lastTotalCacheCreationInputTokens": 1005,
+      "lastTotalCacheReadInputTokens": 18245,
+      "lastTotalWebSearchRequests": 0,
+      "lastFpsAverage": 0.44,
+      "lastFpsLow1Pct": 58.34,
+      "lastModelUsage": {
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 290,
+          "outputTokens": 18,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.00038
+        },
+        "claude-sonnet-4-6": {
+          "inputTokens": 3,
+          "outputTokens": 127,
+          "cacheReadInputTokens": 18245,
+          "cacheCreationInputTokens": 1005,
+          "webSearchRequests": 0,
+          "costUSD": 0.01859375
+        }
+      },
+      "lastSessionId": "cc268fb1-d082-4b50-9993-9fc2d62a5bcf",
+      "lastSessionMetrics": {
+        "frame_duration_ms_count": 165,
+        "frame_duration_ms_min": 0.35854400000243913,
+        "frame_duration_ms_max": 27.02922500000568,
+        "frame_duration_ms_avg": 2.6009989878791293,
+        "frame_duration_ms_p50": 1.8976670000047307,
+        "frame_duration_ms_p95": 6.225735799997345,
+        "frame_duration_ms_p99": 13.702189080000133
+      }
+    },
+    "/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": true,
+      "projectOnboardingSeenCount": 4,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [
+        "ServerInterface.kt",
+        "RegisterActivity.kt",
+        "Constants.kt",
+        "WebView188JS.java",
+        "Bet188SharePreferences.java"
+      ],
+      "exampleFilesGeneratedAt": 1771986641213,
+      "lastCost": 0.59959525,
+      "lastAPIDuration": 138104,
+      "lastAPIDurationWithoutRetries": 138096,
+      "lastToolDuration": 78886,
+      "lastDuration": 3120351,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 18950,
+      "lastTotalOutputTokens": 7901,
+      "lastTotalCacheCreationInputTokens": 41203,
+      "lastTotalCacheReadInputTokens": 130091,
+      "lastTotalWebSearchRequests": 0,
+      "lastFpsAverage": 0.93,
+      "lastFpsLow1Pct": 57.21,
+      "lastModelUsage": {
+        "claude-sonnet-4-6": {
+          "inputTokens": 15969,
+          "outputTokens": 7735,
+          "cacheReadInputTokens": 130091,
+          "cacheCreationInputTokens": 41203,
+          "webSearchRequests": 0,
+          "costUSD": 0.59578425
+        },
+        "claude-haiku-4-5-20251001": {
+          "inputTokens": 2981,
+          "outputTokens": 166,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.0038109999999999997
+        }
+      },
+      "lastSessionId": "2af943cf-00fe-4f9d-8c4b-f2d9e11e88d9",
+      "lastSessionMetrics": {
+        "frame_duration_ms_count": 2882,
+        "frame_duration_ms_min": 0.09553200000664219,
+        "frame_duration_ms_max": 161.408327000001,
+        "frame_duration_ms_avg": 2.345237918111549,
+        "frame_duration_ms_p50": 1.8748115000016696,
+        "frame_duration_ms_p95": 3.3491262499934207,
+        "frame_duration_ms_p99": 17.436983730000463,
+        "hook_duration_ms_count": 6,
+        "hook_duration_ms_min": 0,
+        "hook_duration_ms_max": 1234,
+        "hook_duration_ms_avg": 206,
+        "hook_duration_ms_p50": 0.5,
+        "hook_duration_ms_p95": 925.75,
+        "hook_duration_ms_p99": 1172.3500000000001,
+        "pre_tool_hook_duration_ms_count": 8,
+        "pre_tool_hook_duration_ms_min": 1,
+        "pre_tool_hook_duration_ms_max": 4,
+        "pre_tool_hook_duration_ms_avg": 2,
+        "pre_tool_hook_duration_ms_p50": 2,
+        "pre_tool_hook_duration_ms_p95": 3.299999999999999,
+        "pre_tool_hook_duration_ms_p99": 3.8599999999999994
+      }
+    },
+    "/Users/07404.chingting.chiu": {
+      "allowedTools": [],
+      "mcpContextUris": [],
+      "mcpServers": {},
+      "enabledMcpjsonServers": [],
+      "disabledMcpjsonServers": [],
+      "hasTrustDialogAccepted": false,
+      "projectOnboardingSeenCount": 0,
+      "hasClaudeMdExternalIncludesApproved": false,
+      "hasClaudeMdExternalIncludesWarningShown": false,
+      "exampleFiles": [],
+      "lastCost": 0.062235,
+      "lastAPIDuration": 39165,
+      "lastAPIDurationWithoutRetries": 39164,
+      "lastToolDuration": 0,
+      "lastDuration": 3209242,
+      "lastLinesAdded": 0,
+      "lastLinesRemoved": 0,
+      "lastTotalInputTokens": 1562,
+      "lastTotalOutputTokens": 2177,
+      "lastTotalCacheCreationInputTokens": 0,
+      "lastTotalCacheReadInputTokens": 0,
+      "lastTotalWebSearchRequests": 0,
+      "lastFpsAverage": 0.13,
+      "lastFpsLow1Pct": 64.88,
+      "lastModelUsage": {
+        "claude-opus-4-6": {
+          "inputTokens": 1562,
+          "outputTokens": 2177,
+          "cacheReadInputTokens": 0,
+          "cacheCreationInputTokens": 0,
+          "webSearchRequests": 0,
+          "costUSD": 0.062235
+        }
+      },
+      "lastSessionId": "d6cfadb4-00d9-4a7f-b91d-0cf7e7c65e17",
+      "lastSessionMetrics": {
+        "frame_duration_ms_count": 411,
+        "frame_duration_ms_min": 0.21626699999978882,
+        "frame_duration_ms_max": 23.319197999999915,
+        "frame_duration_ms_avg": 2.2486757299288462,
+        "frame_duration_ms_p50": 1.674133999971673,
+        "frame_duration_ms_p95": 4.9509995000044,
+        "frame_duration_ms_p99": 15.40798280011222,
+        "hook_duration_ms_count": 1,
+        "hook_duration_ms_min": 1124,
+        "hook_duration_ms_max": 1124,
+        "hook_duration_ms_avg": 1124,
+        "hook_duration_ms_p50": 1124,
+        "hook_duration_ms_p95": 1124,
+        "hook_duration_ms_p99": 1124
+      }
+    }
+  },
+  "lastReleaseNotesSeen": "2.1.59",
+  "hasShownOpus46Notice": {
+    "7284baba-9441-49c2-8d0e-09ffe9a30a3f": true
+  },
+  "penguinModeOrgEnabled": false,
+  "groveConfigCache": {
+    "8482ad33-f9fa-485d-93df-051738941e5a": {
+      "grove_enabled": true,
+      "timestamp": 1772074631729
+    }
+  },
+  "cachedExtraUsageDisabledReason": "org_level_disabled",
+  "officialMarketplaceAutoInstallAttempted": true,
+  "officialMarketplaceAutoInstalled": true,
+  "toolUsage": {
+    "Bash": {
+      "usageCount": 103,
+      "lastUsedAt": 1772077661811
+    },
+    "Read": {
+      "usageCount": 119,
+      "lastUsedAt": 1772077271761
+    },
+    "Task": {
+      "usageCount": 7,
+      "lastUsedAt": 1772077487616
+    },
+    "Grep": {
+      "usageCount": 32,
+      "lastUsedAt": 1772077288784
+    },
+    "Write": {
+      "usageCount": 27,
+      "lastUsedAt": 1772076034838
+    },
+    "TaskCreate": {
+      "usageCount": 14,
+      "lastUsedAt": 1772075165823
+    },
+    "TaskUpdate": {
+      "usageCount": 31,
+      "lastUsedAt": 1772075977202
+    },
+    "Edit": {
+      "usageCount": 14,
+      "lastUsedAt": 1772077224027
+    },
+    "AskUserQuestion": {
+      "usageCount": 1,
+      "lastUsedAt": 1771991146745
+    },
+    "Glob": {
+      "usageCount": 10,
+      "lastUsedAt": 1772075091740
+    }
+  },
+  "showSpinnerTree": false,
+  "skillUsage": {
+    "refactor-livedata": {
+      "usageCount": 3,
+      "lastUsedAt": 1772008644282
+    },
+    "requesting-code-review": {
+      "usageCount": 2,
+      "lastUsedAt": 1772071876080
+    }
+  },
+  "effortCalloutDismissed": true,
+  "githubRepoPaths": {
+    "carollynn2253/clauding": [
+      "/Users/07404.chingting.chiu/Documents/GitHub/Clauding"
+    ]
+  }
+}

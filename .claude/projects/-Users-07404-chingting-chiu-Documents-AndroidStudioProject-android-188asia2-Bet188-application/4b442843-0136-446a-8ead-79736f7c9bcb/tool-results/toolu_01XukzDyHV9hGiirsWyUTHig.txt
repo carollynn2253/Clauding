@@ -1,0 +1,230 @@
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-50-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:51:    suspend operator fun invoke(serverResponseHandler: ServerResponseHandler): AutoLoginResult {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-52-        val token = preferences.user188token
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-61-            val (resp, status, _) = spi.post(appContext, serverResponseHandler)
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:62:            if (status == SpiResponse.Status.FAILURE || resp == null) return AutoLoginResult.RegionSettingApiFail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-63-
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-68-                    initFraudForceManager()
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:69:                    AutoLoginResult.EnterLogin
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-70-                }
+--
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-73-                    val msg = resp.msg ?: "response message is null: ${resp.code}"
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:74:                    AutoLoginResult.RegionSettingResponseCodeWrong(msg)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-75-                }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-97-                initFraudForceManager()
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:98:                return AutoLoginResult.EnterLogin
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-99-            }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-106-                    if (isTokenExpired()) {
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:107:                        return AutoLoginResult.TokenExpired
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-108-                    }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-110-                    if (resp.body.isForceChangePassword) {
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:111:                        return AutoLoginResult.EnterForceChangePassword(resp.body.token)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-112-                    }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-122-                    if (!lockPatternEnable || lockPatternKey.isEmpty()) {
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:123:                        AutoLoginResult.EnterLobby
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-124-                    } else {
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:125:                        AutoLoginResult.EnterLockPattern(lockPatternKey)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-126-                    }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-131-                    val msg = ErrorCode.valueOrGeneralError(resp.code).getFormattedMessage()
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:132:                    AutoLoginResult.LoginWithTokenSpecialErrorCode(msg!!)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-133-                }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-137-                    val msg = ErrorCode.valueOrGeneralError(resp.code).getFormattedMessage()
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:138:                    AutoLoginResult.LoginWithTokenWithKickOutCode(msg!!)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-139-                }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-143-                    if (preferences.isLoginSuccess) {
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:144:                        AutoLoginResult.EnterLobby
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-145-                    } else {
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:146:                        AutoLoginResult.EnterLogin
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-147-                    }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-241-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:242:    sealed class AutoLoginResult {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-243-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:244:        data object EnterLogin : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-245-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:246:        data object EnterLobby : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-247-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:248:        data class EnterForceChangePassword(val token: String) : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-249-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:250:        data class EnterLockPattern(val patternKey: String) : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-251-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:252:        data object TokenExpired : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-253-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:254:        data object RegionSettingApiFail : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-255-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:256:        data class RegionSettingResponseCodeWrong(val message: String) : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-257-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:258:        data class LoginWithTokenWithKickOutCode(val message: String) : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-259-
+app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt:260:        data class LoginWithTokenSpecialErrorCode(val message: String) : AutoLoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/usecase/AutoLoginUseCase.kt-261-    }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt-41-import com.xuenn.bet188.revamp.viewmodel.LoginViewModel
+app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt:42:import com.xuenn.bet188.revamp.viewmodel.LoginViewModel.LoginResult
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt-43-import com.xuenn.bet188.revamp.viewmodel.RESULT_DATA_SAVE_KEY
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt-98-            when (status) {
+app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt:99:                is LoginResult.Success -> mLobbyViewModel.fetchRegionTheme(this)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt-100-
+app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt:101:                is LoginResult.OAuthFail -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt-102-                    val notifyData = IconNotifyDialogFragment.IconNotifyObject(
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt-112-                }
+app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt:113:                is LoginResult.VerifyDevice -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/LoginActivity.kt-114-                    openVerifyDevicePage(status.mfaData)
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/ContinueLoginActivity.kt-30-import com.xuenn.bet188.revamp.viewmodel.LockPatternFunction
+app/src/main/java/com/xuenn/bet188/revamp/view/login/ContinueLoginActivity.kt:31:import com.xuenn.bet188.revamp.viewmodel.LoginViewModel.LoginResult
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/ContinueLoginActivity.kt-32-import com.xuenn.bet188.revamp.viewmodel.RESULT_DATA_SAVE_KEY
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/ContinueLoginActivity.kt-65-            when (status) {
+app/src/main/java/com/xuenn/bet188/revamp/view/login/ContinueLoginActivity.kt:66:                LoginResult.Success -> mLobbyViewModel.fetchRegionTheme(this)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/ContinueLoginActivity.kt-67-
+app/src/main/java/com/xuenn/bet188/revamp/view/login/ContinueLoginActivity.kt:68:                LoginResult.OAuthFail -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/login/ContinueLoginActivity.kt-69-                    val notifyData = IconNotifyDialogFragment.IconNotifyObject(
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/livechat/LiveChatLoginFragment.kt-57-        mViewModel.loginReturnStatus.observe(this) { status ->
+app/src/main/java/com/xuenn/bet188/revamp/view/livechat/LiveChatLoginFragment.kt:58:            if (status == LoginViewModel.LoginResult.Success)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/view/livechat/LiveChatLoginFragment.kt-59-                mLobbyViewModel.fetchRegionTheme(requireContext())
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/utils/oauth/FacebookOAuthUtil.kt-12-import com.facebook.login.LoginManager
+app/src/main/java/com/xuenn/bet188/revamp/utils/oauth/FacebookOAuthUtil.kt:13:import com.facebook.login.LoginResult
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/utils/oauth/FacebookOAuthUtil.kt-14-import com.xuenn.bet188.comm.config.ConstantsBet188
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/utils/oauth/FacebookOAuthUtil.kt-37-            callbackManager,
+app/src/main/java/com/xuenn/bet188/revamp/utils/oauth/FacebookOAuthUtil.kt:38:            object : FacebookCallback<LoginResult> {
+app/src/main/java/com/xuenn/bet188/revamp/utils/oauth/FacebookOAuthUtil.kt:39:                override fun onSuccess(result: LoginResult) {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/utils/oauth/FacebookOAuthUtil.kt-40-                    listener?.setProgressStatus(false)
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-214-        when (result) {
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:215:            is AutoLoginUseCase.AutoLoginResult.EnterLogin -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-216-                _uiState.value = SplashState.EnterLogin
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-218-
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:219:            is AutoLoginUseCase.AutoLoginResult.EnterLobby -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-220-                _uiState.value = SplashState.EnterLobby
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-222-
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:223:            is AutoLoginUseCase.AutoLoginResult.EnterForceChangePassword -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-224-                _uiState.value = SplashState.AutoLoginChangePassword(result.token)
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-226-
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:227:            is AutoLoginUseCase.AutoLoginResult.EnterLockPattern -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-228-                _uiState.value = SplashState.AutoLoginLockPattern(result.patternKey)
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-230-
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:231:            is AutoLoginUseCase.AutoLoginResult.LoginWithTokenWithKickOutCode -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-232-                _uiState.value = SplashState.AutoLoginWithKickOutCode(result.message)
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-234-
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:235:            is AutoLoginUseCase.AutoLoginResult.LoginWithTokenSpecialErrorCode -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-236-                _uiState.value = SplashState.AutoLoginSpecialErrorCode(result.message)
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-238-
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:239:            is AutoLoginUseCase.AutoLoginResult.TokenExpired -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-240-                throw SplashException.TokenExpired()
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-242-
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:243:            is AutoLoginUseCase.AutoLoginResult.RegionSettingApiFail -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-244-                throw SplashException.FetchRegionSettingApiFail()
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-246-
+app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt:247:            is AutoLoginUseCase.AutoLoginResult.RegionSettingResponseCodeWrong -> {
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/model/SplashViewModel.kt-248-                throw SplashException.FetchRegionSettingResponseCodeWrong(result.message)
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-54-    val isSponsorUpdated = MutableLiveData<Boolean>()
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:55:    val loginReturnStatus = MutableLiveData<LoginResult>()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-56-
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-135-        performGetSponsorList()
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:136:        loginReturnStatus.value = LoginResult.Success
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-137-
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-156-                                performGetSponsorList()
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:157:                                loginReturnStatus.value = LoginResult.Success
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-158-                            }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-165-                            ForgotAccountActivity.launch(context as Activity)
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:166:                            loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-167-                            true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-173-                            else {
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:174:                                loginReturnStatus.value = LoginResult.VerifyDevice(resp.body.mfaChallenge)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-175-                                true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-187-                            )
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:188:                            loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-189-                            true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-200-                            )
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:201:                            loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-202-                            true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-218-                            )
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:219:                            loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-220-                            true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-230-                            )
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:231:                            loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-232-                            true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-236-                    DialogUtil.showNetworkErrorDialog(context, DialogUtil.API_RETURN_FAIL)
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:237:                    loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-238-                    return true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-280-                                    performGetSponsorList()
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:281:                                    loginReturnStatus.value = LoginResult.Success
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-282-                                }
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-290-                                else {
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:291:                                    loginReturnStatus.value = LoginResult.VerifyDevice(resp.body.mfaChallenge)
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-292-                                    true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-296-                                ForgotAccountActivity.launch(context as Activity)
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:297:                                loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-298-                                true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-309-                                )
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:310:                                loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-311-                                true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-317-
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:318:                                loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-319-                                true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-335-                                )
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:336:                                loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-337-                                true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-341-                                ContinueLoginActivity.launch(context as Activity, oAuthUserData)
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:342:                                loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-343-                                true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-354-                                )
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:355:                                loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-356-                                true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-366-                                )
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:367:                                loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-368-                                true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-372-                        DialogUtil.showNetworkErrorDialog(context, DialogUtil.API_RETURN_FAIL)
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:373:                        loginReturnStatus.value = LoginResult.Fail
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-374-                        return true
+--
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-380-
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:381:    sealed class LoginResult {
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:382:        data object Success : LoginResult()
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:383:        data object Fail : LoginResult()
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:384:        data object OAuthFail : LoginResult()
+app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt:385:        data class VerifyDevice(val mfaData: MFAChallengeObject) : LoginResult()
+/Users/07404.chingting.chiu/Documents/AndroidStudioProject/android-188asia2/Bet188/application/app/src/main/java/com/xuenn/bet188/revamp/viewmodel/LoginViewModel.kt-386-    }

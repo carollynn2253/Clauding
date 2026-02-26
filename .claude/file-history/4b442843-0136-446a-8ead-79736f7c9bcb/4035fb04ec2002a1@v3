@@ -1,0 +1,213 @@
+package com.xuenn.bet188.revamp.view.login
+
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.content.Intent
+import android.graphics.Typeface
+import android.text.Editable
+import android.text.Spannable
+import android.text.SpannableStringBuilder
+import android.text.TextUtils
+import android.text.TextWatcher
+import android.text.style.StyleSpan
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.os.bundleOf
+import com.google.gson.Gson
+import com.xuenn.bet188.R
+import com.xuenn.bet188.databinding.ActivityContinueLoginBinding
+import com.xuenn.bet188.revamp.model.data.OAuthUserData
+import com.xuenn.bet188.revamp.model.data.UiStr
+import com.xuenn.bet188.revamp.model.data.repo.LoginRepository
+import com.xuenn.bet188.revamp.utils.CommonUtils
+import com.xuenn.bet188.revamp.model.data.repo.StringsRepository.getString
+import com.xuenn.bet188.revamp.utils.disableCopyPaste
+import com.xuenn.bet188.revamp.utils.hideKeyboard
+import com.xuenn.bet188.revamp.view.base.BaseBindingActivity
+import com.xuenn.bet188.revamp.view.lockpattern.LockPatternActivity
+import com.xuenn.bet188.revamp.viewmodel.ContinueLoginViewModel
+import com.xuenn.bet188.revamp.viewmodel.LOCK_PATTERN_FUNCTION_KEY
+import com.xuenn.bet188.revamp.viewmodel.LobbyViewModel
+import com.xuenn.bet188.revamp.viewmodel.LockPatternFunction
+import com.xuenn.bet188.revamp.viewmodel.LoginViewModel.LoginResult
+import com.xuenn.bet188.revamp.viewmodel.RESULT_DATA_SAVE_KEY
+import com.xuenn.bet188.revamp.widget.IconNotifyDialogFragment
+import org.koin.androidx.viewmodel.ext.android.viewModel
+import org.koin.core.parameter.parametersOf
+
+class ContinueLoginActivity : BaseBindingActivity<ActivityContinueLoginBinding>() {
+
+    var mData = OAuthUserData()
+
+    private val mViewModel: ContinueLoginViewModel by viewModel()
+    private val mLobbyViewModel: LobbyViewModel by viewModel { parametersOf(this) }
+
+    var usernameBeEdited: Boolean = false
+    var pwdBeEdited: Boolean = false
+
+    override fun getContentView(): Int {
+        return R.layout.activity_continue_login
+    }
+
+    override fun initData() {
+        if (intent != null) {
+            mData = if (intent.hasExtra(KEY_LOGIN_DATA)) Gson().fromJson(
+                intent.getStringExtra(KEY_LOGIN_DATA),
+                OAuthUserData::class.java
+            ) else OAuthUserData()
+        }
+
+        mViewModel.init(this)
+        mViewModel.progressDialogObservable.observe(this) { isShow ->
+            if (isShow) showLoadingDialog() else dismissLoadingDialog()
+        }
+
+        mViewModel.loginReturnStatus.observe(this) { status ->
+            when (status) {
+                LoginResult.Success -> mLobbyViewModel.fetchRegionTheme(this)
+
+                LoginResult.OAuthFail -> {
+                    val notifyData = IconNotifyDialogFragment.IconNotifyObject(
+                        R.mipmap.ic_fail_active,
+                        getString(UiStr.TXTAUTHENTICATIONFAILED),
+                        getString(UiStr.MSGSIGNWITHDIFFERENTACCOUNT),
+                        getString(UiStr.TXTBTNCOMOK)
+                    )
+
+                    IconNotifyDialogFragment.Companion.newInstance(notifyData)
+                        .setListener(this)
+                        .show(supportFragmentManager, IconNotifyDialogFragment::class.java.simpleName)
+                }
+
+                else -> {
+
+                }
+            }
+        }
+
+        mLobbyViewModel.isThemeDone.observe(this) { isThemeDone ->
+            if (isThemeDone) {
+                mViewModel.setEnableBioAuth(false)
+                openUpLockPatternSetting()
+            }
+        }
+
+        binding.vm = mViewModel
+    }
+
+    override fun initView() {
+        // Disable copy paste for EditText
+        binding.username.disableCopyPaste()
+        binding.pwd.disableCopyPaste()
+
+        val oriStr = SpannableStringBuilder(getString(UiStr.TXTOAUTHENTERACCOUNTANDPWD, mData.oAuthName))
+        val boldStr = mData.oAuthName
+        val end: Int = boldStr.length + oriStr.toString().indexOf(boldStr)
+        oriStr.setSpan(StyleSpan(Typeface.BOLD), oriStr.toString().indexOf(boldStr), end, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE)
+        binding.message.text = oriStr
+
+        binding.username.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+                binding.usernameLayout.error = ""
+            }
+
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(editable: Editable) {
+                usernameBeEdited = true
+                checkIsEnableContinueBtn()
+            }
+        })
+        binding.username.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && usernameBeEdited) {
+                if ((binding.username.text!!.isEmpty()))
+                    binding.usernameLayout.error = getString(UiStr.HELPJOINUSREQUIRED)
+            }
+        }
+
+        binding.pwd.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
+                binding.pwdLayout.error = ""
+            }
+
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(editable: Editable) {
+                pwdBeEdited = true
+                checkIsEnableContinueBtn()
+            }
+        })
+        binding.pwd.setOnFocusChangeListener { _, hasFocus ->
+            if (!hasFocus && pwdBeEdited) {
+                if ((binding.pwd.text!!.isEmpty()))
+                    binding.pwdLayout.error = getString(UiStr.HELPJOINUSREQUIRED)
+            }
+        }
+
+
+        //btn
+        binding.btnContinue.setOnClickListener {
+            hideKeyboard(binding.btnContinue)
+
+            mViewModel.performContinueLogin(binding.username.text.toString(), binding.pwd.text.toString(), mData)
+        }
+    }
+
+    fun checkIsEnableContinueBtn() {
+        binding.btnContinue.isEnabled = !TextUtils.isEmpty(binding.username.text) && binding.username.text.toString().length >= 5
+                && !TextUtils.isEmpty(binding.pwd.text) && binding.pwd.text.toString().length >= 5
+    }
+
+    private fun openUpLockPatternSetting() {
+        val intent = Intent(this@ContinueLoginActivity, LockPatternActivity::class.java).apply {
+            putExtras(
+                bundleOf(
+                    LOCK_PATTERN_FUNCTION_KEY to LockPatternFunction.SET_KEY,
+                )
+            )
+        }
+        lockPatternActivityLaunchForResult.launch(intent)
+    }
+
+    private var lockPatternActivityLaunchForResult = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val resultDataIntent: Intent? = result.data
+        if (result.resultCode == RESULT_OK) {
+            val lockPattenKey = resultDataIntent?.getStringExtra(RESULT_DATA_SAVE_KEY)
+                ?: ""
+            mViewModel.saveLockPattern(lockPattenKey)
+            mViewModel.openSuccessPage()
+        } else {
+            CommonUtils.handleUserLogout(this, true)
+        }
+    }
+
+    override fun onPositiveButtonClicked(requestCode: Int) {
+        when (requestCode) {
+            FAIL_TOO_MANY -> finish()
+
+            else -> super.onPositiveButtonClicked(requestCode)
+        }
+    }
+
+    @SuppressLint("MissingSuperCall")
+    override fun onBackPressed() {
+        finish()
+    }
+
+    override fun finish() {
+        hideKeyboard(binding.root)
+        super.finish()
+    }
+
+    companion object {
+        const val FAIL_TOO_MANY = 20002
+        const val KEY_LOGIN_DATA = "KEY_LOGIN_DATA"
+
+        fun launch(activity: Activity, data: OAuthUserData) {
+            val intent = Intent(activity, ContinueLoginActivity::class.java)
+            intent.putExtra(KEY_LOGIN_DATA, Gson().toJson(data))
+            activity.startActivity(intent)
+        }
+    }
+
+    override fun getFragmentContainer(): Int = -1
+}
