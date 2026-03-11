@@ -1,7 +1,11 @@
 {
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "Bash(/Users/07404.chingting.chiu/Library/Android/sdk/emulator/emulator -list-avds 2>/dev/null || echo \"No emulator command found or no AVDs\")",
+      "Bash(cd /Users/07404.chingting.chiu/AndroidStudioProjects/CTApplication && ./gradlew :automotive:assembleDebug 2>&1 | tail -30)",
+      "Bash(cd /Users/07404.chingting.chiu/AndroidStudioProjects/CTApplication && ./gradlew :automotive:assembleDebug 2>&1 | tail -40)",
+      "Bash(cd /Users/07404.chingting.chiu/AndroidStudioProjects/CTApplication && ./gradlew :automotive:tasks --group verification 2>&1 | grep -i test)"
     ]
   }
 }
